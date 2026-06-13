@@ -34,8 +34,6 @@
     .badge-amber { background: #FAEEDA; color: #854F0B; }
     .badge-red { background: #FCEBEB; color: #A32D2D; }
     .badge-blue { background: #E6F1FB; color: #185FA5; }
-
-    /* LIST VIEW */
     .view { display: none; }
     .view.active { display: block; }
     .filter-row { display: flex; align-items: center; gap: 8px; margin-bottom: 1.25rem; }
@@ -61,8 +59,6 @@
     .tag { font-size: 10px; padding: 2px 7px; border-radius: 99px; background: #f5f5f5; color: #666; }
     .add-card { border: 1px dashed #ddd; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; min-height: 180px; color: #999; font-size: 13px; gap: 8px; }
     .add-card:hover { background: #fafafa; color: #111; }
-
-    /* DETAIL VIEW */
     .back-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #666; cursor: pointer; background: none; border: none; padding: 0; margin-bottom: 1rem; }
     .back-btn:hover { color: #111; }
     .profile-header { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
@@ -104,28 +100,23 @@
 </head>
 <body>
 <div class="app">
-
-  <!-- SIDEBAR -->
   <div class="sidebar">
     <a class="sidebar-logo" href="index.html"><i class="ti ti-settings-2"></i> FlowERP</a>
     <div class="section-label">Modules</div>
     <a class="nav-item" href="dashboard.html"><i class="ti ti-layout-dashboard"></i> Dashboard</a>
-    <a class="nav-item" href="#"><i class="ti ti-box"></i> Inventory</a>
-    <a class="nav-item" href="#"><i class="ti ti-truck"></i> Procurement</a>
-    <a class="nav-item" href="#"><i class="ti ti-list-details"></i> Bill of Materials</a>
-    <a class="nav-item" href="#"><i class="ti ti-settings-2"></i> Production</a>
-    <a class="nav-item" href="#"><i class="ti ti-receipt"></i> Finance</a>
-    <a class="nav-item" href="#"><i class="ti ti-alert-triangle"></i> At-risk parts</a>
+    <a class="nav-item" href="runout.html"><i class="ti ti-box"></i> Inventory</a>
+    <a class="nav-item" href="orders.html"><i class="ti ti-truck"></i> Procurement</a>
+    <a class="nav-item" href="bom.html"><i class="ti ti-list-details"></i> Bill of Materials</a>
+    <a class="nav-item" href="production.html"><i class="ti ti-settings-2"></i> Production</a>
+    <a class="nav-item" href="finance.html"><i class="ti ti-receipt"></i> Finance</a>
+    <a class="nav-item" href="atrisk.html"><i class="ti ti-alert-triangle"></i> At-risk parts</a>
     <a class="nav-item active" href="vendors.html"><i class="ti ti-users"></i> Vendors</a>
     <div class="section-label">Account</div>
-    <a class="nav-item" href="#"><i class="ti ti-settings"></i> Settings</a>
+    <a class="nav-item" href="index.html"><i class="ti ti-settings"></i> Settings</a>
     <a class="nav-item" href="index.html"><i class="ti ti-logout"></i> Log out</a>
     <div class="sidebar-footer">
       <div class="avatar">ME</div>
-      <div>
-        <div class="user-name">Matthew E.</div>
-        <div class="user-company">Ridgeline Mfg. Co.</div>
-      </div>
+      <div><div class="user-name">Matthew E.</div><div class="user-company">Ridgeline Mfg. Co.</div></div>
     </div>
   </div>
 
@@ -134,13 +125,11 @@
       <span class="topbar-title" id="page-title">Vendor profiles</span>
       <div style="display:flex;gap:8px;">
         <button class="btn"><i class="ti ti-upload"></i> Import</button>
-        <button class="btn btn-primary" onclick="showList()"><i class="ti ti-plus"></i> Add vendor</button>
+        <button class="btn btn-primary"><i class="ti ti-plus"></i> Add vendor</button>
       </div>
     </div>
 
     <div class="content">
-
-      <!-- LIST VIEW -->
       <div class="view active" id="view-list">
         <div class="filter-row">
           <input type="text" placeholder="Search vendors..." />
@@ -150,82 +139,49 @@
           <button class="filter-tab">🆕 New (4)</button>
         </div>
         <div class="vendor-grid">
-
           <div class="vendor-card" onclick="showDetail('acme')">
-            <div class="vendor-card-top">
-              <div class="vendor-avatar" style="background:#E6F1FB;color:#185FA5;">AM</div>
-              <div><div class="vendor-name">Acme Metals</div><div class="vendor-type">Raw materials · Steel & aluminum</div></div>
-            </div>
+            <div class="vendor-card-top"><div class="vendor-avatar" style="background:#E6F1FB;color:#185FA5;">AM</div><div><div class="vendor-name">Acme Metals</div><div class="vendor-type">Raw materials · Steel & aluminum</div></div></div>
             <div class="score-row"><span class="score-label">Overall score</span><span class="score-pill score-high">94 / 100</span></div>
             <div class="score-bar"><div class="score-fill" style="width:94%;background:#639922;"></div></div>
             <div class="vendor-tags"><span class="badge badge-green">✓ Trusted</span><span class="tag">On-time 96%</span><span class="tag">3yr relationship</span></div>
           </div>
-
           <div class="vendor-card" onclick="showDetail('fast')">
-            <div class="vendor-card-top">
-              <div class="vendor-avatar" style="background:#FAEEDA;color:#854F0B;">FB</div>
-              <div><div class="vendor-name">FastBearings Co.</div><div class="vendor-type">Components · Bearings & seals</div></div>
-            </div>
+            <div class="vendor-card-top"><div class="vendor-avatar" style="background:#FAEEDA;color:#854F0B;">FB</div><div><div class="vendor-name">FastBearings Co.</div><div class="vendor-type">Components · Bearings & seals</div></div></div>
             <div class="score-row"><span class="score-label">Overall score</span><span class="score-pill score-mid">71 / 100</span></div>
             <div class="score-bar"><div class="score-fill" style="width:71%;background:#BA7517;"></div></div>
-            <div class="vendor-tags"><span class="tag">On-time 78%</span><span class="tag">1yr relationship</span><span class="tag">Quality issues ×2</span></div>
+            <div class="vendor-tags"><span class="tag">On-time 78%</span><span class="tag">Quality issues ×2</span></div>
           </div>
-
           <div class="vendor-card" onclick="showDetail('wire')">
-            <div class="vendor-card-top">
-              <div class="vendor-avatar" style="background:#FCEBEB;color:#A32D2D;">WW</div>
-              <div><div class="vendor-name">WireWorld</div><div class="vendor-type">Electrical · Wire & cable</div></div>
-            </div>
+            <div class="vendor-card-top"><div class="vendor-avatar" style="background:#FCEBEB;color:#A32D2D;">WW</div><div><div class="vendor-name">WireWorld</div><div class="vendor-type">Electrical · Wire & cable</div></div></div>
             <div class="score-row"><span class="score-label">Overall score</span><span class="score-pill score-low">48 / 100</span></div>
             <div class="score-bar"><div class="score-fill" style="width:48%;background:#E24B4A;"></div></div>
             <div class="vendor-tags"><span class="badge badge-red">⚠ Hound list</span><span class="tag">On-time 61%</span><span class="tag">Late ×7 this yr</span></div>
           </div>
-
           <div class="vendor-card" onclick="showDetail('acme')">
-            <div class="vendor-card-top">
-              <div class="vendor-avatar" style="background:#E1F5EE;color:#0F6E56;">SP</div>
-              <div><div class="vendor-name">SealPro Ltd.</div><div class="vendor-type">Components · Hydraulic seals</div></div>
-            </div>
+            <div class="vendor-card-top"><div class="vendor-avatar" style="background:#E1F5EE;color:#0F6E56;">SP</div><div><div class="vendor-name">SealPro Ltd.</div><div class="vendor-type">Components · Hydraulic seals</div></div></div>
             <div class="score-row"><span class="score-label">Overall score</span><span class="score-pill score-mid">79 / 100</span></div>
             <div class="score-bar"><div class="score-fill" style="width:79%;background:#1D9E75;"></div></div>
             <div class="vendor-tags"><span class="tag">On-time 82%</span><span class="tag">2yr relationship</span></div>
           </div>
-
           <div class="vendor-card" onclick="showDetail('acme')">
-            <div class="vendor-card-top">
-              <div class="vendor-avatar" style="background:#EEEDFE;color:#3C3489;">PC</div>
-              <div><div class="vendor-name">PrecisionCast Inc.</div><div class="vendor-type">Manufacturing · Cast parts</div></div>
-            </div>
+            <div class="vendor-card-top"><div class="vendor-avatar" style="background:#EEEDFE;color:#3C3489;">PC</div><div><div class="vendor-name">PrecisionCast Inc.</div><div class="vendor-type">Manufacturing · Cast parts</div></div></div>
             <div class="score-row"><span class="score-label">Overall score</span><span class="score-pill score-high">88 / 100</span></div>
             <div class="score-bar"><div class="score-fill" style="width:88%;background:#534AB7;"></div></div>
             <div class="vendor-tags"><span class="badge badge-green">✓ Trusted</span><span class="tag">On-time 91%</span></div>
           </div>
-
-          <div class="add-card" onclick="alert('Add vendor form coming soon!')">
-            <i class="ti ti-plus" style="font-size:22px;"></i> Add vendor
-          </div>
-
+          <div class="add-card" onclick="alert('Add vendor form coming soon!')"><i class="ti ti-plus" style="font-size:22px;"></i> Add vendor</div>
         </div>
       </div>
 
-      <!-- DETAIL VIEW — ACME -->
       <div class="view" id="view-acme">
         <button class="back-btn" onclick="showList()"><i class="ti ti-arrow-left"></i> Back to all vendors</button>
         <div class="profile-header">
           <div class="profile-left">
             <div class="profile-avatar" style="background:#E6F1FB;color:#185FA5;">AM</div>
-            <div>
-              <div class="profile-name">Acme Metals</div>
-              <div class="profile-meta">
-                <span><i class="ti ti-map-pin"></i> Pittsburgh, PA</span>
-                <span><i class="ti ti-calendar"></i> Vendor since 2021</span>
-                <span><i class="ti ti-phone"></i> (412) 555-0184</span>
-                <span><i class="ti ti-mail"></i> orders@acmemetals.com</span>
-              </div>
-            </div>
+            <div><div class="profile-name">Acme Metals</div><div class="profile-meta"><span><i class="ti ti-map-pin"></i> Pittsburgh, PA</span><span><i class="ti ti-calendar"></i> Since 2021</span><span><i class="ti ti-phone"></i> (412) 555-0184</span><span><i class="ti ti-mail"></i> orders@acmemetals.com</span></div></div>
           </div>
           <div style="display:flex;gap:8px;">
-            <button class="btn"><i class="ti ti-file-report"></i> Send open order report</button>
+            <a href="orders.html" class="btn"><i class="ti ti-file-report"></i> Send open order report</a>
             <button class="btn btn-primary"><i class="ti ti-plus"></i> New PO</button>
           </div>
         </div>
@@ -264,7 +220,6 @@
                 <tr><td>PO-2041</td><td>$4,200</td><td>Jun 10</td><td><span class="badge badge-green">On time</span></td></tr>
                 <tr><td>PO-2018</td><td>$6,800</td><td>May 22</td><td><span class="badge badge-green">On time</span></td></tr>
                 <tr><td>PO-1994</td><td>$3,100</td><td>Apr 30</td><td><span class="badge badge-amber">1 day late</span></td></tr>
-                <tr><td>PO-1971</td><td>$5,500</td><td>Apr 11</td><td><span class="badge badge-green">On time</span></td></tr>
               </tbody>
             </table>
           </div>
@@ -272,8 +227,8 @@
         <div class="card">
           <div class="card-header"><span class="card-title">Notes & history</span><button class="btn btn-primary" style="font-size:11px;padding:4px 10px;" onclick="addNote()"><i class="ti ti-plus"></i> Add note</button></div>
           <div id="notes-list">
-            <div class="note-item"><div class="note-meta">📌 Pinned · Jun 2, 2026 · You</div><div class="note-text">Best contact for urgent orders is Mike Reilly (cell: 412-555-0291). He can expedite within 24hrs if needed. Don't go through the main line for rush requests.</div></div>
-            <div class="note-item"><div class="note-meta">May 15, 2026 · You</div><div class="note-text">Negotiated 3% discount on orders over $5K starting Q3. Make sure to hit that threshold before splitting into multiple POs.</div></div>
+            <div class="note-item"><div class="note-meta">📌 Pinned · Jun 2, 2026 · You</div><div class="note-text">Best contact for urgent orders is Mike Reilly (cell: 412-555-0291). He can expedite within 24hrs. Don't go through the main line for rush requests.</div></div>
+            <div class="note-item"><div class="note-meta">May 15, 2026 · You</div><div class="note-text">Negotiated 3% discount on orders over $5K starting Q3.</div></div>
           </div>
           <div class="note-input-row">
             <input type="text" id="note-input" placeholder="Add a note about this vendor..." />
@@ -282,24 +237,15 @@
         </div>
       </div>
 
-      <!-- DETAIL VIEW — WIREWORLD -->
       <div class="view" id="view-wire">
         <button class="back-btn" onclick="showList()"><i class="ti ti-arrow-left"></i> Back to all vendors</button>
         <div class="profile-header" style="border-left:3px solid #E24B4A;">
           <div class="profile-left">
             <div class="profile-avatar" style="background:#FCEBEB;color:#A32D2D;">WW</div>
-            <div>
-              <div class="profile-name">WireWorld <span class="badge badge-red" style="margin-left:8px;font-size:12px;">⚠ Hound list</span></div>
-              <div class="profile-meta">
-                <span><i class="ti ti-map-pin"></i> Detroit, MI</span>
-                <span><i class="ti ti-calendar"></i> Vendor since 2023</span>
-                <span><i class="ti ti-phone"></i> (313) 555-0291</span>
-                <span><i class="ti ti-mail"></i> procurement@wireworld.net</span>
-              </div>
-            </div>
+            <div><div class="profile-name">WireWorld <span class="badge badge-red" style="margin-left:8px;">⚠ Hound list</span></div><div class="profile-meta"><span><i class="ti ti-map-pin"></i> Detroit, MI</span><span><i class="ti ti-phone"></i> (313) 555-0291</span><span><i class="ti ti-mail"></i> procurement@wireworld.net</span></div></div>
           </div>
           <div style="display:flex;gap:8px;">
-            <button class="btn" style="background:#FCEBEB;border-color:#F09595;color:#A32D2D;"><i class="ti ti-file-report"></i> Send open order report</button>
+            <a href="orders.html" class="btn" style="background:#FCEBEB;border-color:#F09595;color:#A32D2D;"><i class="ti ti-file-report"></i> Send open order report</a>
             <button class="btn btn-primary"><i class="ti ti-plus"></i> New PO</button>
           </div>
         </div>
@@ -315,37 +261,21 @@
             </div>
           </div>
         </div>
-        <div class="score-cards">
-          <div class="score-card"><div class="score-card-label">YTD spend</div><div class="score-card-value">$19K</div><div class="score-card-sub">Across 12 POs</div></div>
-          <div class="score-card"><div class="score-card-label">Avg lead time</div><div class="score-card-value">11.4 days</div><div class="score-card-sub" style="color:#E24B4A;">↑ getting worse</div></div>
-          <div class="score-card"><div class="score-card-label">Open POs</div><div class="score-card-value">5</div><div class="score-card-sub" style="color:#E24B4A;">3 already late</div></div>
-          <div class="score-card"><div class="score-card-label">Late deliveries</div><div class="score-card-value" style="color:#E24B4A;">7</div><div class="score-card-sub">Out of 12 this yr</div></div>
-        </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Notes & history</span><button class="btn btn-primary" style="font-size:11px;padding:4px 10px;"><i class="ti ti-plus"></i> Add note</button></div>
-          <div class="note-item"><div class="note-meta">📌 Pinned · May 30, 2026 · You</div><div class="note-text">WireWorld has been unreliable all year. PO-2051 is already 9 days late. Actively sourcing backup supplier — contacted ElectroCable Inc. for a quote. Do NOT rely solely on WireWorld for Copper Wire 2mm.</div></div>
-          <div class="note-item"><div class="note-meta">Apr 12, 2026 · You</div><div class="note-text">Called their sales rep — no answer. Emailed — no response for 3 days. This is becoming a pattern. Consider finding replacement supplier before Q3.</div></div>
+          <div class="card-header"><span class="card-title">Notes</span></div>
+          <div class="note-item"><div class="note-meta">📌 Pinned · May 30 · You</div><div class="note-text">WireWorld has been unreliable all year. PO-2051 is 9 days late. Actively sourcing backup supplier. Do NOT rely solely on WireWorld for Copper Wire 2mm.</div></div>
         </div>
       </div>
 
-      <!-- DETAIL VIEW — FASTBEARINGS -->
       <div class="view" id="view-fast">
         <button class="back-btn" onclick="showList()"><i class="ti ti-arrow-left"></i> Back to all vendors</button>
         <div class="profile-header">
           <div class="profile-left">
             <div class="profile-avatar" style="background:#FAEEDA;color:#854F0B;">FB</div>
-            <div>
-              <div class="profile-name">FastBearings Co.</div>
-              <div class="profile-meta">
-                <span><i class="ti ti-map-pin"></i> Cleveland, OH</span>
-                <span><i class="ti ti-calendar"></i> Vendor since 2024</span>
-                <span><i class="ti ti-phone"></i> (216) 555-0847</span>
-                <span><i class="ti ti-mail"></i> orders@fastbearings.com</span>
-              </div>
-            </div>
+            <div><div class="profile-name">FastBearings Co.</div><div class="profile-meta"><span><i class="ti ti-map-pin"></i> Cleveland, OH</span><span><i class="ti ti-phone"></i> (216) 555-0847</span><span><i class="ti ti-mail"></i> orders@fastbearings.com</span></div></div>
           </div>
           <div style="display:flex;gap:8px;">
-            <button class="btn"><i class="ti ti-file-report"></i> Send open order report</button>
+            <a href="orders.html" class="btn"><i class="ti ti-file-report"></i> Send open order report</a>
             <button class="btn btn-primary"><i class="ti ti-plus"></i> New PO</button>
           </div>
         </div>
@@ -361,22 +291,14 @@
             </div>
           </div>
         </div>
-        <div class="score-cards">
-          <div class="score-card"><div class="score-card-label">YTD spend</div><div class="score-card-value">$41K</div><div class="score-card-sub">Across 18 POs</div></div>
-          <div class="score-card"><div class="score-card-label">Avg lead time</div><div class="score-card-value">9.1 days</div><div class="score-card-sub" style="color:#E24B4A;">↑ up from 6 days</div></div>
-          <div class="score-card"><div class="score-card-label">Open POs</div><div class="score-card-value">3</div><div class="score-card-sub">$8,400 value</div></div>
-          <div class="score-card"><div class="score-card-label">Late deliveries</div><div class="score-card-value">4</div><div class="score-card-sub">Out of 18 this yr</div></div>
-        </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Notes & history</span><button class="btn btn-primary" style="font-size:11px;padding:4px 10px;"><i class="ti ti-plus"></i> Add note</button></div>
-          <div class="note-item"><div class="note-meta">Jun 1, 2026 · You</div><div class="note-text">FastBearings lead time has been creeping up — was 6 days, now averaging 9. Need to adjust reorder point. New contact is Lisa (lisa@fastbearings.com) — old rep left the company.</div></div>
+          <div class="card-header"><span class="card-title">Notes</span></div>
+          <div class="note-item"><div class="note-meta">Jun 1 · You</div><div class="note-text">Lead time creeping up from 6 to 9 days. New contact is Lisa (lisa@fastbearings.com).</div></div>
         </div>
       </div>
-
     </div>
   </div>
 </div>
-
 <script>
 function showDetail(vendor) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
