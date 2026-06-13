@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlowERP — Vendors</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; }
+    .app { display: flex; height: 100vh; }
+    .sidebar { width: 210px; flex-shrink: 0; background: #fff; border-right: 1px solid #eee; display: flex; flex-direction: column; padding: 1rem 0; }
+    .sidebar-logo { padding: 0 1.1rem 1rem; border-bottom: 1px solid #eee; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; color: #111; text-decoration: none; }
+    .sidebar-logo i { color: #378ADD; font-size: 20px; }
+    .section-label { font-size: 10px; color: #bbb; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 1.1rem 4px; }
+    .nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 1.1rem; font-size: 13px; color: #666; cursor: pointer; text-decoration: none; border-left: 2px solid transparent; }
+    .nav-item:hover { background: #f5f5f5; color: #111; }
+    .nav-item.active { background: #f0f7ff; color: #185FA5; font-weight: 500; border-left: 2px solid #378ADD; }
+    .nav-item i { font-size: 16px; }
+    .sidebar-footer { margin-top: auto; padding: 1rem 1.1rem; border-top: 1px solid #eee; display: flex; align-items: center; gap: 8px; }
+    .avatar { width: 30px; height: 30px; border-radius: 50%; background: #378ADD; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; flex-shrink: 0; }
+    .user-name { font-size: 12px; font-weight: 500; color: #111; }
+    .user-company { font-size: 11px; color: #999; }
+    .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+    .topbar { background: #fff; border-bottom: 1px solid #eee; padding: 0.85rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+    .topbar-title { font-size: 15px; font-weight: 600; color: #111; }
+    .btn { font-size: 12px; padding: 6px 14px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
+    .btn:hover { background: #f5f5f5; }
+    .btn-primary { background: #378ADD; border-color: #378ADD; color: #fff; }
+    .btn-primary:hover { background: #185FA5; }
+    .content { padding: 1.5rem; flex: 1; }
+    .badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 500; }
+    .badge-green { background: #EAF3DE; color: #3B6D11; }
+    .badge-amber { background: #FAEEDA; color: #854F0B; }
+    .badge-red { background: #FCEBEB; color: #A32D2D; }
+    .badge-blue { background: #E6F1FB; color: #185FA5; }
+
+    /* LIST VIEW */
+    .view { display: none; }
+    .view.active { display: block; }
+    .filter-row { display: flex; align-items: center; gap: 8px; margin-bottom: 1.25rem; }
+    .filter-row input { font-size: 13px; padding: 7px 12px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; width: 240px; }
+    .filter-tab { font-size: 12px; padding: 5px 12px; border-radius: 99px; border: 1px solid #ddd; background: transparent; color: #666; cursor: pointer; }
+    .filter-tab.active { background: #378ADD; border-color: #378ADD; color: #fff; }
+    .vendor-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .vendor-card { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 1.1rem; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+    .vendor-card:hover { border-color: #ccc; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .vendor-card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 0.85rem; }
+    .vendor-avatar { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+    .vendor-name { font-size: 14px; font-weight: 600; color: #111; }
+    .vendor-type { font-size: 11px; color: #999; margin-top: 2px; }
+    .score-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+    .score-label { font-size: 11px; color: #999; }
+    .score-pill { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+    .score-high { background: #EAF3DE; color: #3B6D11; }
+    .score-mid { background: #FAEEDA; color: #854F0B; }
+    .score-low { background: #FCEBEB; color: #A32D2D; }
+    .score-bar { height: 4px; background: #f0f0f0; border-radius: 99px; overflow: hidden; margin-bottom: 8px; }
+    .score-fill { height: 100%; border-radius: 99px; }
+    .vendor-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+    .tag { font-size: 10px; padding: 2px 7px; border-radius: 99px; background: #f5f5f5; color: #666; }
+    .add-card { border: 1px dashed #ddd; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; min-height: 180px; color: #999; font-size: 13px; gap: 8px; }
+    .add-card:hover { background: #fafafa; color: #111; }
+
+    /* DETAIL VIEW */
+    .back-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #666; cursor: pointer; background: none; border: none; padding: 0; margin-bottom: 1rem; }
+    .back-btn:hover { color: #111; }
+    .profile-header { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
+    .profile-left { display: flex; align-items: center; gap: 14px; }
+    .profile-avatar { width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 600; }
+    .profile-name { font-size: 20px; font-weight: 700; color: #111; margin-bottom: 4px; }
+    .profile-meta { font-size: 12px; color: #999; display: flex; flex-wrap: wrap; gap: 12px; }
+    .profile-meta span { display: flex; align-items: center; gap: 4px; }
+    .score-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1rem; }
+    .score-card { background: #f5f5f5; border-radius: 10px; padding: 0.85rem; }
+    .score-card-label { font-size: 11px; color: #999; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .score-card-value { font-size: 22px; font-weight: 700; color: #111; }
+    .score-card-sub { font-size: 11px; color: #999; margin-top: 2px; }
+    .overall-score { display: flex; align-items: center; gap: 14px; padding: 1rem; background: #f5f5f5; border-radius: 10px; margin-bottom: 1rem; }
+    .overall-num { font-size: 42px; font-weight: 700; line-height: 1; }
+    .overall-label { font-size: 12px; color: #666; margin-bottom: 8px; }
+    .score-breakdown { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+    .score-row-detail { display: flex; align-items: center; gap: 8px; font-size: 11px; }
+    .score-row-detail span:first-child { width: 110px; color: #666; }
+    .mini-bar { flex: 1; height: 4px; background: #e0e0e0; border-radius: 99px; overflow: hidden; }
+    .mini-fill { height: 100%; border-radius: 99px; }
+    .score-row-detail span:last-child { width: 30px; text-align: right; font-weight: 600; color: #111; }
+    .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+    .card { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 1rem 1.25rem; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem; }
+    .card-title { font-size: 13px; font-weight: 600; color: #111; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { text-align: left; font-weight: 500; color: #999; padding: 5px 8px 8px; border-bottom: 1px solid #f0f0f0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; }
+    td { padding: 8px 8px; border-bottom: 1px solid #f5f5f5; color: #333; }
+    tr:last-child td { border-bottom: none; }
+    .supply-item { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f5f5f5; font-size: 12px; }
+    .supply-item:last-child { border-bottom: none; }
+    .note-item { padding: 8px 10px; background: #f9f9f9; border-radius: 8px; margin-bottom: 6px; }
+    .note-meta { font-size: 10px; color: #999; margin-bottom: 3px; }
+    .note-text { font-size: 12px; color: #333; line-height: 1.5; }
+    .note-input-row { display: flex; gap: 6px; margin-top: 8px; }
+    .note-input-row input { flex: 1; font-size: 12px; padding: 7px 10px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <a class="sidebar-logo" href="index.html"><i class="ti ti-settings-2"></i> FlowERP</a>
+    <div class="section-label">Modules</div>
+    <a class="nav-item" href="dashboard.html"><i class="ti ti-layout-dashboard"></i> Dashboard</a>
+    <a class="nav-item" href="#"><i class="ti ti-box"></i> Inventory</a>
+    <a class="nav-item" href="#"><i class="ti ti-truck"></i> Procurement</a>
+    <a class="nav-item" href="#"><i class="ti ti-list-details"></i> Bill of Materials</a>
+    <a class="nav-item" href="#"><i class="ti ti-settings-2"></i> Production</a>
+    <a class="nav-item" href="#"><i class="ti ti-receipt"></i> Finance</a>
+    <a class="nav-item" href="#"><i class="ti ti-alert-triangle"></i> At-risk parts</a>
+    <a class="nav-item active" href="vendors.html"><i class="ti ti-users"></i> Vendors</a>
+    <div class="section-label">Account</div>
+    <a class="nav-item" href="#"><i class="ti ti-settings"></i> Settings</a>
+    <a class="nav-item" href="index.html"><i class="ti ti-logout"></i> Log out</a>
+    <div class="sidebar-footer">
+      <div class="avatar">ME</div>
+      <div>
+        <div class="user-name">Matthew E.</div>
+        <div class="user-company">Ridgeline Mfg. Co.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title" id="page-title">Vendor profiles</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn"><i class="ti ti-upload"></i> Import</button>
+        <button class="btn btn-primary" onclick="showList()"><i class="ti ti-plus"></i> Add vendor</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- LIST VIEW -->
+      <div class="view active" id="view-list">
+        <div class="filter-row">
+          <input type="text" placeholder="Search vendors..." />
+          <button class="filter-tab active">All (23)</button>
+          <button class="filter-tab">✅ Trusted (14)</button>
+          <button class="filter-tab">⚠️ Hound (5)</button>
+          <button class="filter-tab">🆕 New (4)</button>
+        </div>
+        <div class="vendor-grid">
+
+          <div class="vendor-card" onclick="showDetail('acme')">
+            <div class="vendor-card-top">
+              <div class="vendor-avatar" style="background:#E6F1FB;color:#185FA5;">AM</div>
+              <div><div class="vendor-name">Acme Metals</div><div class="vendor-type">Raw materials · Steel & aluminum</div></div>
+            </div>
+            <div class="score-row"><span class="score-label">Overall score</span><span class="score-pill score-high">94 / 100</span></div>
+            <div class="score-bar"><div class="score-fill" style="width:94%;background:#639922;"></div></div>
+            <div class="vendor-tags"><span class="badge badge-green">✓ Trusted</span><span class="tag">On-time 96%</span><span class="tag">3yr relationship</span></div>
+          </div>
+
+          <div class="vendor-card" onclick="showDetail('fast')">
+            <div class="vendor-card-top">
+              <div class="vendor-avatar" style="background:#FAEEDA;color:#854F0B;">FB</div>
+              <div><div class="vendor-name">FastBearings Co.</div><div class="vendor-type">Components · Bearings & seals</div></div>
+            </div>
+            <div class="score-row"><span class="score-label">Overall score</span><span class="score-pill score-mid">71 / 100</span></div>
+            <div class="score-bar"><div class="score-fill" style="width:71%;background:#BA7517;"></div></div>
+            <div class="vendor-tags"><span class="tag">On-time 78%</span><span class="tag">1yr relationship</span><span class="tag">Quality issues ×2</span></div>
+          </div>
+
+          <div class="vendor-card" onclick="showDetail('wire')">
+            <div class="vendor-card-top">
+              <div class="vendor-avatar" style="background:#FCEBEB;color:#A32D2D;">WW</div>
+              <div><div class="vendor-name">WireWorld</div><div class="vendor-type">Electrical · Wire & cable</div></div>
+            </div>
+            <div class="score-row"><span class="score-label">Overall score</span><span class="score-pill score-low">48 / 100</span></div>
+            <div class="score-bar"><div class="score-fill" style="width:48%;background:#E24B4A;"></div></div>
+            <div class="vendor-tags"><span class="badge badge-red">⚠ Hound list</span><span class="tag">On-time 61%</span><span class="tag">Late ×7 this yr</span></div>
+          </div>
+
+          <div class="vendor-card" onclick="showDetail('acme')">
+            <div class="vendor-card-top">
+              <div class="vendor-avatar" style="background:#E1F5EE;color:#0F6E56;">SP</div>
+              <div><div class="vendor-name">SealPro Ltd.</div><div class="vendor-type">Components · Hydraulic seals</div></div>
+            </div>
+            <div class="score-row"><span class="score-label">Overall score</span><span class="score-pill score-mid">79 / 100</span></div>
+            <div class="score-bar"><div class="score-fill" style="width:79%;background:#1D9E75;"></div></div>
+            <div class="vendor-tags"><span class="tag">On-time 82%</span><span class="tag">2yr relationship</span></div>
+          </div>
+
+          <div class="vendor-card" onclick="showDetail('acme')">
+            <div class="vendor-card-top">
+              <div class="vendor-avatar" style="background:#EEEDFE;color:#3C3489;">PC</div>
+              <div><div class="vendor-name">PrecisionCast Inc.</div><div class="vendor-type">Manufacturing · Cast parts</div></div>
+            </div>
+            <div class="score-row"><span class="score-label">Overall score</span><span class="score-pill score-high">88 / 100</span></div>
+            <div class="score-bar"><div class="score-fill" style="width:88%;background:#534AB7;"></div></div>
+            <div class="vendor-tags"><span class="badge badge-green">✓ Trusted</span><span class="tag">On-time 91%</span></div>
+          </div>
+
+          <div class="add-card" onclick="alert('Add vendor form coming soon!')">
+            <i class="ti ti-plus" style="font-size:22px;"></i> Add vendor
+          </div>
+
+        </div>
+      </div>
+
+      <!-- DETAIL VIEW — ACME -->
+      <div class="view" id="view-acme">
+        <button class="back-btn" onclick="showList()"><i class="ti ti-arrow-left"></i> Back to all vendors</button>
+        <div class="profile-header">
+          <div class="profile-left">
+            <div class="profile-avatar" style="background:#E6F1FB;color:#185FA5;">AM</div>
+            <div>
+              <div class="profile-name">Acme Metals</div>
+              <div class="profile-meta">
+                <span><i class="ti ti-map-pin"></i> Pittsburgh, PA</span>
+                <span><i class="ti ti-calendar"></i> Vendor since 2021</span>
+                <span><i class="ti ti-phone"></i> (412) 555-0184</span>
+                <span><i class="ti ti-mail"></i> orders@acmemetals.com</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn"><i class="ti ti-file-report"></i> Send open order report</button>
+            <button class="btn btn-primary"><i class="ti ti-plus"></i> New PO</button>
+          </div>
+        </div>
+        <div class="overall-score">
+          <div class="overall-num" style="color:#639922;">94</div>
+          <div style="flex:1;">
+            <div class="overall-label">Overall vendor score — <span class="badge badge-green">✓ Trusted — can be left alone</span></div>
+            <div class="score-breakdown">
+              <div class="score-row-detail"><span>On-time delivery</span><div class="mini-bar"><div class="mini-fill" style="width:96%;background:#639922;"></div></div><span>96%</span></div>
+              <div class="score-row-detail"><span>Quality</span><div class="mini-bar"><div class="mini-fill" style="width:98%;background:#639922;"></div></div><span>98%</span></div>
+              <div class="score-row-detail"><span>Responsiveness</span><div class="mini-bar"><div class="mini-fill" style="width:90%;background:#639922;"></div></div><span>90%</span></div>
+              <div class="score-row-detail"><span>Pricing accuracy</span><div class="mini-bar"><div class="mini-fill" style="width:92%;background:#639922;"></div></div><span>92%</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="score-cards">
+          <div class="score-card"><div class="score-card-label">YTD spend</div><div class="score-card-value">$84K</div><div class="score-card-sub">Across 34 POs</div></div>
+          <div class="score-card"><div class="score-card-label">Avg lead time</div><div class="score-card-value">6.2 days</div><div class="score-card-sub" style="color:#1D9E75;">↓ improving</div></div>
+          <div class="score-card"><div class="score-card-label">Open POs</div><div class="score-card-value">3</div><div class="score-card-sub">$12,400 value</div></div>
+          <div class="score-card"><div class="score-card-label">Late deliveries</div><div class="score-card-value">2</div><div class="score-card-sub">Out of 34 this yr</div></div>
+        </div>
+        <div class="profile-grid">
+          <div class="card">
+            <div class="card-header"><span class="card-title">What they supply</span></div>
+            <div class="supply-item"><span>Steel Rod 12mm</span><span class="badge badge-green">Active</span></div>
+            <div class="supply-item"><span>Steel Rod 8mm</span><span class="badge badge-green">Active</span></div>
+            <div class="supply-item"><span>Aluminum Sheet 3mm</span><span class="badge badge-green">Active</span></div>
+            <div class="supply-item"><span>Stainless Plate 6mm</span><span class="badge badge-amber">Seasonal</span></div>
+            <div class="supply-item"><span>Copper Pipe 1in</span><span class="badge badge-blue">On request</span></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Recent purchase orders</span></div>
+            <table>
+              <thead><tr><th>PO #</th><th>Value</th><th>Delivered</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>PO-2041</td><td>$4,200</td><td>Jun 10</td><td><span class="badge badge-green">On time</span></td></tr>
+                <tr><td>PO-2018</td><td>$6,800</td><td>May 22</td><td><span class="badge badge-green">On time</span></td></tr>
+                <tr><td>PO-1994</td><td>$3,100</td><td>Apr 30</td><td><span class="badge badge-amber">1 day late</span></td></tr>
+                <tr><td>PO-1971</td><td>$5,500</td><td>Apr 11</td><td><span class="badge badge-green">On time</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Notes & history</span><button class="btn btn-primary" style="font-size:11px;padding:4px 10px;" onclick="addNote()"><i class="ti ti-plus"></i> Add note</button></div>
+          <div id="notes-list">
+            <div class="note-item"><div class="note-meta">📌 Pinned · Jun 2, 2026 · You</div><div class="note-text">Best contact for urgent orders is Mike Reilly (cell: 412-555-0291). He can expedite within 24hrs if needed. Don't go through the main line for rush requests.</div></div>
+            <div class="note-item"><div class="note-meta">May 15, 2026 · You</div><div class="note-text">Negotiated 3% discount on orders over $5K starting Q3. Make sure to hit that threshold before splitting into multiple POs.</div></div>
+          </div>
+          <div class="note-input-row">
+            <input type="text" id="note-input" placeholder="Add a note about this vendor..." />
+            <button class="btn btn-primary" onclick="saveNote()">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DETAIL VIEW — WIREWORLD -->
+      <div class="view" id="view-wire">
+        <button class="back-btn" onclick="showList()"><i class="ti ti-arrow-left"></i> Back to all vendors</button>
+        <div class="profile-header" style="border-left:3px solid #E24B4A;">
+          <div class="profile-left">
+            <div class="profile-avatar" style="background:#FCEBEB;color:#A32D2D;">WW</div>
+            <div>
+              <div class="profile-name">WireWorld <span class="badge badge-red" style="margin-left:8px;font-size:12px;">⚠ Hound list</span></div>
+              <div class="profile-meta">
+                <span><i class="ti ti-map-pin"></i> Detroit, MI</span>
+                <span><i class="ti ti-calendar"></i> Vendor since 2023</span>
+                <span><i class="ti ti-phone"></i> (313) 555-0291</span>
+                <span><i class="ti ti-mail"></i> procurement@wireworld.net</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn" style="background:#FCEBEB;border-color:#F09595;color:#A32D2D;"><i class="ti ti-file-report"></i> Send open order report</button>
+            <button class="btn btn-primary"><i class="ti ti-plus"></i> New PO</button>
+          </div>
+        </div>
+        <div class="overall-score" style="background:#FFF5F5;">
+          <div class="overall-num" style="color:#E24B4A;">48</div>
+          <div style="flex:1;">
+            <div class="overall-label">Overall vendor score — <span class="badge badge-red">⚠ Hound list — needs constant follow-up</span></div>
+            <div class="score-breakdown">
+              <div class="score-row-detail"><span>On-time delivery</span><div class="mini-bar"><div class="mini-fill" style="width:61%;background:#E24B4A;"></div></div><span>61%</span></div>
+              <div class="score-row-detail"><span>Quality</span><div class="mini-bar"><div class="mini-fill" style="width:72%;background:#BA7517;"></div></div><span>72%</span></div>
+              <div class="score-row-detail"><span>Responsiveness</span><div class="mini-bar"><div class="mini-fill" style="width:40%;background:#E24B4A;"></div></div><span>40%</span></div>
+              <div class="score-row-detail"><span>Pricing accuracy</span><div class="mini-bar"><div class="mini-fill" style="width:58%;background:#E24B4A;"></div></div><span>58%</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="score-cards">
+          <div class="score-card"><div class="score-card-label">YTD spend</div><div class="score-card-value">$19K</div><div class="score-card-sub">Across 12 POs</div></div>
+          <div class="score-card"><div class="score-card-label">Avg lead time</div><div class="score-card-value">11.4 days</div><div class="score-card-sub" style="color:#E24B4A;">↑ getting worse</div></div>
+          <div class="score-card"><div class="score-card-label">Open POs</div><div class="score-card-value">5</div><div class="score-card-sub" style="color:#E24B4A;">3 already late</div></div>
+          <div class="score-card"><div class="score-card-label">Late deliveries</div><div class="score-card-value" style="color:#E24B4A;">7</div><div class="score-card-sub">Out of 12 this yr</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Notes & history</span><button class="btn btn-primary" style="font-size:11px;padding:4px 10px;"><i class="ti ti-plus"></i> Add note</button></div>
+          <div class="note-item"><div class="note-meta">📌 Pinned · May 30, 2026 · You</div><div class="note-text">WireWorld has been unreliable all year. PO-2051 is already 9 days late. Actively sourcing backup supplier — contacted ElectroCable Inc. for a quote. Do NOT rely solely on WireWorld for Copper Wire 2mm.</div></div>
+          <div class="note-item"><div class="note-meta">Apr 12, 2026 · You</div><div class="note-text">Called their sales rep — no answer. Emailed — no response for 3 days. This is becoming a pattern. Consider finding replacement supplier before Q3.</div></div>
+        </div>
+      </div>
+
+      <!-- DETAIL VIEW — FASTBEARINGS -->
+      <div class="view" id="view-fast">
+        <button class="back-btn" onclick="showList()"><i class="ti ti-arrow-left"></i> Back to all vendors</button>
+        <div class="profile-header">
+          <div class="profile-left">
+            <div class="profile-avatar" style="background:#FAEEDA;color:#854F0B;">FB</div>
+            <div>
+              <div class="profile-name">FastBearings Co.</div>
+              <div class="profile-meta">
+                <span><i class="ti ti-map-pin"></i> Cleveland, OH</span>
+                <span><i class="ti ti-calendar"></i> Vendor since 2024</span>
+                <span><i class="ti ti-phone"></i> (216) 555-0847</span>
+                <span><i class="ti ti-mail"></i> orders@fastbearings.com</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn"><i class="ti ti-file-report"></i> Send open order report</button>
+            <button class="btn btn-primary"><i class="ti ti-plus"></i> New PO</button>
+          </div>
+        </div>
+        <div class="overall-score">
+          <div class="overall-num" style="color:#BA7517;">71</div>
+          <div style="flex:1;">
+            <div class="overall-label">Overall vendor score — <span class="badge badge-amber">Monitor — keep an eye on</span></div>
+            <div class="score-breakdown">
+              <div class="score-row-detail"><span>On-time delivery</span><div class="mini-bar"><div class="mini-fill" style="width:78%;background:#BA7517;"></div></div><span>78%</span></div>
+              <div class="score-row-detail"><span>Quality</span><div class="mini-bar"><div class="mini-fill" style="width:85%;background:#1D9E75;"></div></div><span>85%</span></div>
+              <div class="score-row-detail"><span>Responsiveness</span><div class="mini-bar"><div class="mini-fill" style="width:70%;background:#BA7517;"></div></div><span>70%</span></div>
+              <div class="score-row-detail"><span>Pricing accuracy</span><div class="mini-bar"><div class="mini-fill" style="width:80%;background:#1D9E75;"></div></div><span>80%</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="score-cards">
+          <div class="score-card"><div class="score-card-label">YTD spend</div><div class="score-card-value">$41K</div><div class="score-card-sub">Across 18 POs</div></div>
+          <div class="score-card"><div class="score-card-label">Avg lead time</div><div class="score-card-value">9.1 days</div><div class="score-card-sub" style="color:#E24B4A;">↑ up from 6 days</div></div>
+          <div class="score-card"><div class="score-card-label">Open POs</div><div class="score-card-value">3</div><div class="score-card-sub">$8,400 value</div></div>
+          <div class="score-card"><div class="score-card-label">Late deliveries</div><div class="score-card-value">4</div><div class="score-card-sub">Out of 18 this yr</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Notes & history</span><button class="btn btn-primary" style="font-size:11px;padding:4px 10px;"><i class="ti ti-plus"></i> Add note</button></div>
+          <div class="note-item"><div class="note-meta">Jun 1, 2026 · You</div><div class="note-text">FastBearings lead time has been creeping up — was 6 days, now averaging 9. Need to adjust reorder point. New contact is Lisa (lisa@fastbearings.com) — old rep left the company.</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function showDetail(vendor) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + vendor).classList.add('active');
+  const names = { acme: 'Acme Metals', wire: 'WireWorld', fast: 'FastBearings Co.' };
+  document.getElementById('page-title').textContent = names[vendor] || 'Vendor profile';
+}
+function showList() {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-list').classList.add('active');
+  document.getElementById('page-title').textContent = 'Vendor profiles';
+}
+function addNote() { document.getElementById('note-input').focus(); }
+function saveNote() {
+  const input = document.getElementById('note-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const list = document.getElementById('notes-list');
+  const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const div = document.createElement('div');
+  div.className = 'note-item';
+  div.innerHTML = `<div class="note-meta">${today} · You</div><div class="note-text">${text}</div>`;
+  list.insertBefore(div, list.firstChild);
+  input.value = '';
+}
+</script>
+</body>
+</html>
