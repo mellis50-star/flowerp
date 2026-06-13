@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlowERP — Bill of Materials</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; }
+    .app { display: flex; height: 100vh; }
+    .sidebar { width: 210px; flex-shrink: 0; background: #fff; border-right: 1px solid #eee; display: flex; flex-direction: column; padding: 1rem 0; }
+    .sidebar-logo { padding: 0 1.1rem 1rem; border-bottom: 1px solid #eee; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; color: #111; text-decoration: none; }
+    .sidebar-logo i { color: #378ADD; font-size: 20px; }
+    .section-label { font-size: 10px; color: #bbb; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 1.1rem 4px; }
+    .nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 1.1rem; font-size: 13px; color: #666; cursor: pointer; text-decoration: none; border-left: 2px solid transparent; }
+    .nav-item:hover { background: #f5f5f5; color: #111; }
+    .nav-item.active { background: #f0f7ff; color: #185FA5; font-weight: 500; border-left: 2px solid #378ADD; }
+    .nav-item i { font-size: 16px; }
+    .sidebar-footer { margin-top: auto; padding: 1rem 1.1rem; border-top: 1px solid #eee; display: flex; align-items: center; gap: 8px; }
+    .avatar { width: 30px; height: 30px; border-radius: 50%; background: #378ADD; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; flex-shrink: 0; }
+    .user-name { font-size: 12px; font-weight: 500; color: #111; }
+    .user-company { font-size: 11px; color: #999; }
+    .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+    .topbar { background: #fff; border-bottom: 1px solid #eee; padding: 0.85rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+    .topbar-title { font-size: 15px; font-weight: 600; color: #111; }
+    .btn { font-size: 12px; padding: 6px 14px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
+    .btn:hover { background: #f5f5f5; }
+    .btn-primary { background: #378ADD; border-color: #378ADD; color: #fff; }
+    .btn-primary:hover { background: #185FA5; }
+    .content { padding: 1.5rem; flex: 1; }
+    .badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 500; }
+    .badge-green { background: #EAF3DE; color: #3B6D11; }
+    .badge-amber { background: #FAEEDA; color: #854F0B; }
+    .badge-red { background: #FCEBEB; color: #A32D2D; }
+    .badge-blue { background: #E6F1FB; color: #185FA5; }
+    .view { display: none; }
+    .view.active { display: block; }
+    .product-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+    .product-card { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 1.1rem; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+    .product-card:hover { border-color: #ccc; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .product-emoji { font-size: 28px; margin-bottom: 8px; }
+    .product-name { font-size: 14px; font-weight: 600; color: #111; margin-bottom: 3px; }
+    .product-sku { font-size: 11px; color: #999; margin-bottom: 10px; }
+    .can-make-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .can-make-label { font-size: 11px; color: #999; }
+    .can-make-value { font-size: 20px; font-weight: 700; }
+    .bottleneck { font-size: 11px; padding: 4px 8px; border-radius: 6px; margin-top: 6px; }
+    .bn-red { background: #FCEBEB; color: #A32D2D; }
+    .bn-amber { background: #FAEEDA; color: #854F0B; }
+    .bn-green { background: #EAF3DE; color: #3B6D11; }
+    .add-card { border: 1px dashed #ddd; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; min-height: 160px; color: #999; font-size: 13px; gap: 8px; }
+    .add-card:hover { background: #fafafa; color: #111; }
+    .back-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #666; cursor: pointer; background: none; border: none; padding: 0; margin-bottom: 1rem; }
+    .back-btn:hover { color: #111; }
+    .product-header { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
+    .product-header-left { display: flex; align-items: center; gap: 14px; }
+    .product-emoji-lg { font-size: 42px; }
+    .product-title { font-size: 20px; font-weight: 700; color: #111; margin-bottom: 3px; }
+    .product-subtitle { font-size: 12px; color: #999; }
+    .can-make-cards { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 1rem; }
+    .can-make-card { background: #f5f5f5; border-radius: 10px; padding: 0.85rem; }
+    .can-make-card-label { font-size: 11px; color: #999; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .can-make-card-value { font-size: 22px; font-weight: 700; }
+    .can-make-card-sub { font-size: 11px; color: #999; margin-top: 2px; }
+    .bottleneck-banner { border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; font-size: 12px; }
+    .qty-row { display: flex; align-items: center; gap: 10px; background: #f5f5f5; border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 1rem; }
+    .qty-row label { font-size: 12px; color: #666; }
+    .qty-row input { width: 70px; font-size: 13px; padding: 5px 8px; border-radius: 6px; border: 1px solid #ddd; background: #fff; color: #111; text-align: center; }
+    .qty-result { font-size: 13px; color: #111; font-weight: 500; }
+    .bom-card { background: #fff; border: 1px solid #eee; border-radius: 10px; overflow: hidden; }
+    .bom-card-header { padding: 0.85rem 1.25rem; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; background: #fafafa; }
+    .bom-card-title { font-size: 13px; font-weight: 600; color: #111; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { text-align: left; font-weight: 500; color: #999; padding: 8px 12px; border-bottom: 1px solid #f0f0f0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; }
+    td { padding: 10px 12px; border-bottom: 1px solid #f5f5f5; color: #333; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+    .bar-wrap { display: flex; align-items: center; gap: 8px; }
+    .bar { flex: 1; height: 6px; background: #f0f0f0; border-radius: 99px; overflow: hidden; min-width: 60px; }
+    .bar-fill { height: 100%; border-radius: 99px; }
+    .comp-name { font-size: 13px; font-weight: 600; color: #111; }
+    .comp-sku { font-size: 11px; color: #999; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <a class="sidebar-logo" href="index.html"><i class="ti ti-settings-2"></i> FlowERP</a>
+    <div class="section-label">Modules</div>
+    <a class="nav-item" href="dashboard.html"><i class="ti ti-layout-dashboard"></i> Dashboard</a>
+    <a class="nav-item" href="runout.html"><i class="ti ti-box"></i> Inventory</a>
+    <a class="nav-item" href="orders.html"><i class="ti ti-truck"></i> Procurement</a>
+    <a class="nav-item active" href="bom.html"><i class="ti ti-list-details"></i> Bill of Materials</a>
+    <a class="nav-item" href="production.html"><i class="ti ti-settings-2"></i> Production</a>
+    <a class="nav-item" href="finance.html"><i class="ti ti-receipt"></i> Finance</a>
+    <a class="nav-item" href="atrisk.html"><i class="ti ti-alert-triangle"></i> At-risk parts</a>
+    <a class="nav-item" href="vendors.html"><i class="ti ti-users"></i> Vendors</a>
+    <div class="section-label">Account</div>
+    <a class="nav-item" href="#"><i class="ti ti-settings"></i> Settings</a>
+    <a class="nav-item" href="index.html"><i class="ti ti-logout"></i> Log out</a>
+    <div class="sidebar-footer">
+      <div class="avatar">ME</div>
+      <div><div class="user-name">Matthew E.</div><div class="user-company">Ridgeline Mfg. Co.</div></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title" id="page-title">Bill of Materials</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn"><i class="ti ti-upload"></i> Import BOM</button>
+        <button class="btn btn-primary"><i class="ti ti-plus"></i> New product</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- LIST VIEW -->
+      <div class="view active" id="view-list">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:1.25rem;">
+          <input type="text" placeholder="Search products..." style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#111;width:220px;" />
+          <select style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#111;"><option>All products</option><option>Can make now</option><option>Bottlenecked</option><option>Cannot make</option></select>
+        </div>
+        <div class="product-grid">
+          <div class="product-card" onclick="showDetail('burger')">
+            <div class="product-emoji">🍔</div>
+            <div class="product-name">Double Cheeseburger</div>
+            <div class="product-sku">SKU: FG-0001 · 7 components</div>
+            <div class="can-make-row"><span class="can-make-label">Can make right now</span><span class="can-make-value" style="color:#BA7517;">50</span></div>
+            <div class="bottleneck bn-amber">⚠ Bottleneck: Cheese slices (50 left)</div>
+          </div>
+          <div class="product-card" onclick="showDetail('motor')">
+            <div class="product-emoji">⚙️</div>
+            <div class="product-name">Motor Unit A2</div>
+            <div class="product-sku">SKU: FG-2001 · 5 components</div>
+            <div class="can-make-row"><span class="can-make-label">Can make right now</span><span class="can-make-value" style="color:#E24B4A;">1</span></div>
+            <div class="bottleneck bn-red">🔴 Bottleneck: Steel Rod 12mm (23 left)</div>
+          </div>
+          <div class="product-card" onclick="showDetail('pump')">
+            <div class="product-emoji">🔧</div>
+            <div class="product-name">Pump Assembly P1</div>
+            <div class="product-sku">SKU: FG-2002 · 6 components</div>
+            <div class="can-make-row"><span class="can-make-label">Can make right now</span><span class="can-make-value" style="color:#1D9E75;">142</span></div>
+            <div class="bottleneck bn-green">✓ All components well stocked</div>
+          </div>
+          <div class="product-card" onclick="showDetail('motor')">
+            <div class="product-emoji">📦</div>
+            <div class="product-name">Gear Box G3</div>
+            <div class="product-sku">SKU: FG-2003 · 8 components</div>
+            <div class="can-make-row"><span class="can-make-label">Can make right now</span><span class="can-make-value" style="color:#E24B4A;">0</span></div>
+            <div class="bottleneck bn-red">🔴 Bottleneck: Bearing 6205-ZZ (0 available)</div>
+          </div>
+          <div class="product-card" onclick="showDetail('pump')">
+            <div class="product-emoji">🔩</div>
+            <div class="product-name">Valve Assembly V2</div>
+            <div class="product-sku">SKU: FG-2004 · 4 components</div>
+            <div class="can-make-row"><span class="can-make-label">Can make right now</span><span class="can-make-value" style="color:#1D9E75;">280</span></div>
+            <div class="bottleneck bn-green">✓ All components well stocked</div>
+          </div>
+          <div class="add-card" onclick="alert('New product form coming soon!')">
+            <i class="ti ti-plus" style="font-size:22px;"></i> Add new product
+          </div>
+        </div>
+      </div>
+
+      <!-- BURGER DETAIL -->
+      <div class="view" id="view-burger">
+        <button class="back-btn" onclick="showList()"><i class="ti ti-arrow-left"></i> Back to all products</button>
+        <div class="product-header">
+          <div class="product-header-left">
+            <div class="product-emoji-lg">🍔</div>
+            <div><div class="product-title">Double Cheeseburger</div><div class="product-subtitle">SKU: FG-0001 · 7 components · Last updated Jun 13, 2026</div></div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn"><i class="ti ti-edit"></i> Edit BOM</button>
+            <a href="production.html" class="btn btn-primary"><i class="ti ti-player-play"></i> Start production run</a>
+          </div>
+        </div>
+        <div class="bottleneck-banner" style="background:#FCEBEB;border:1px solid #F09595;color:#A32D2D;">
+          <i class="ti ti-alert-triangle" style="font-size:17px;flex-shrink:0;"></i>
+          <div><strong>Bottleneck detected:</strong> You can only make <strong>50 Double Cheeseburgers</strong> right now — limited by Cheese Slices (100 in stock, need 2 per burger). You have enough of everything else for 100+. Order more cheese to unlock full capacity.</div>
+        </div>
+        <div class="can-make-cards">
+          <div class="can-make-card"><div class="can-make-card-label">Can make now</div><div class="can-make-card-value" style="color:#BA7517;">50</div><div class="can-make-card-sub">Limited by cheese</div></div>
+          <div class="can-make-card"><div class="can-make-card-label">Could make (full stock)</div><div class="can-make-card-value" style="color:#1D9E75;">100</div><div class="can-make-card-sub">If cheese restocked</div></div>
+          <div class="can-make-card"><div class="can-make-card-label">In production now</div><div class="can-make-card-value">24</div><div class="can-make-card-sub">RUN-441 active</div></div>
+          <div class="can-make-card"><div class="can-make-card-label">Produced this month</div><div class="can-make-card-value">312</div><div class="can-make-card-sub">Target was 350</div></div>
+        </div>
+        <div class="qty-row">
+          <label>If I want to make:</label>
+          <input type="number" value="100" id="qty-input" oninput="updateQty()" min="1" />
+          <span class="qty-result" id="qty-result">Double Cheeseburgers — you need to order <strong style="color:#A32D2D;">100 more cheese slices</strong> and <strong style="color:#1D9E75;">everything else is ready</strong></span>
+        </div>
+        <div class="bom-card">
+          <div class="bom-card-header"><span class="bom-card-title">Components — what goes into 1 Double Cheeseburger</span><span style="font-size:11px;color:#999;">Click any row to view inventory</span></div>
+          <table>
+            <thead><tr><th>Component</th><th>Qty per unit</th><th>In stock</th><th>Can make</th><th>Status</th><th>Vendor</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td><div class="comp-name">🥩 Beef Patty</div><div class="comp-sku">SKU: RM-3001</div></td><td><strong>2</strong> patties</td><td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:100%;background:#1D9E75;"></div></div><span style="font-size:12px;font-weight:600;color:#1D9E75;">210</span></div></td><td style="font-weight:600;color:#1D9E75;">105</td><td><span class="badge badge-green">Sufficient</span></td><td><a href="vendors.html" style="color:#378ADD;font-size:11px;">Prime Meats Co.</a></td><td><a href="runout.html" style="color:#378ADD;font-size:11px;">View stock</a></td></tr>
+              <tr style="background:#FFF5F5;"><td><div class="comp-name">🧀 Cheese Slice</div><div class="comp-sku">SKU: RM-3002</div></td><td><strong>2</strong> slices</td><td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:48%;background:#E24B4A;"></div></div><span style="font-size:12px;font-weight:600;color:#E24B4A;">100</span></div></td><td style="font-weight:600;color:#E24B4A;">50 ⚠</td><td><span class="badge badge-red">Bottleneck</span></td><td><a href="vendors.html" style="color:#378ADD;font-size:11px;">Dairy Direct</a></td><td><a href="orders.html" style="color:#378ADD;font-size:11px;">+ Order now</a></td></tr>
+              <tr><td><div class="comp-name">🍞 Burger Bun</div><div class="comp-sku">SKU: RM-3003</div></td><td><strong>1</strong> bun</td><td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:100%;background:#1D9E75;"></div></div><span style="font-size:12px;font-weight:600;color:#1D9E75;">180</span></div></td><td style="font-weight:600;color:#1D9E75;">180</td><td><span class="badge badge-green">Sufficient</span></td><td><a href="vendors.html" style="color:#378ADD;font-size:11px;">City Bakery</a></td><td><a href="runout.html" style="color:#378ADD;font-size:11px;">View stock</a></td></tr>
+              <tr><td><div class="comp-name">🥬 Lettuce</div><div class="comp-sku">SKU: RM-3004</div></td><td><strong>1</strong> serving</td><td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:85%;background:#1D9E75;"></div></div><span style="font-size:12px;font-weight:600;color:#1D9E75;">165</span></div></td><td style="font-weight:600;color:#1D9E75;">165</td><td><span class="badge badge-green">Sufficient</span></td><td><a href="vendors.html" style="color:#378ADD;font-size:11px;">Fresh Farms</a></td><td><a href="runout.html" style="color:#378ADD;font-size:11px;">View stock</a></td></tr>
+              <tr><td><div class="comp-name">🍅 Tomato Slice</div><div class="comp-sku">SKU: RM-3005</div></td><td><strong>1</strong> slice</td><td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:100%;background:#1D9E75;"></div></div><span style="font-size:12px;font-weight:600;color:#1D9E75;">200</span></div></td><td style="font-weight:600;color:#1D9E75;">200</td><td><span class="badge badge-green">Sufficient</span></td><td><a href="vendors.html" style="color:#378ADD;font-size:11px;">Fresh Farms</a></td><td><a href="runout.html" style="color:#378ADD;font-size:11px;">View stock</a></td></tr>
+              <tr><td><div class="comp-name">🧅 Onion</div><div class="comp-sku">SKU: RM-3006</div></td><td><strong>1</strong> serving</td><td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:90%;background:#1D9E75;"></div></div><span style="font-size:12px;font-weight:600;color:#1D9E75;">140</span></div></td><td style="font-weight:600;color:#1D9E75;">140</td><td><span class="badge badge-green">Sufficient</span></td><td><a href="vendors.html" style="color:#378ADD;font-size:11px;">Fresh Farms</a></td><td><a href="runout.html" style="color:#378ADD;font-size:11px;">View stock</a></td></tr>
+              <tr><td><div class="comp-name">🫙 Special Sauce</div><div class="comp-sku">SKU: RM-3007</div></td><td><strong>15</strong> ml</td><td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:78%;background:#1D9E75;"></div></div><span style="font-size:12px;font-weight:600;color:#1D9E75;">2.1L</span></div></td><td style="font-weight:600;color:#1D9E75;">140</td><td><span class="badge badge-green">Sufficient</span></td><td><a href="vendors.html" style="color:#378ADD;font-size:11px;">Sauce Masters</a></td><td><a href="runout.html" style="color:#378ADD;font-size:11px;">View stock</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- MOTOR DETAIL -->
+      <div class="view" id="view-motor">
+        <button class="back-btn" onclick="showList()"><i class="ti ti-arrow-left"></i> Back to all products</button>
+        <div class="product-header">
+          <div class="product-header-left">
+            <div class="product-emoji-lg">⚙️</div>
+            <div><div class="product-title">Motor Unit A2</div><div class="product-subtitle">SKU: FG-2001 · 5 components · Last updated Jun 12, 2026</div></div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn"><i class="ti ti-edit"></i> Edit BOM</button>
+            <a href="production.html" class="btn btn-primary"><i class="ti ti-player-play"></i> Start production run</a>
+          </div>
+        </div>
+        <div class="bottleneck-banner" style="background:#FCEBEB;border:1px solid #F09595;color:#A32D2D;">
+          <i class="ti ti-alert-triangle" style="font-size:17px;flex-shrink:0;"></i>
+          <div><strong>Critical bottleneck:</strong> You can only make <strong>1 Motor Unit A2</strong> — Steel Rod 12mm is nearly depleted (23 units, need 20 per motor). Rush order or production stops after the next unit.</div>
+        </div>
+        <div class="can-make-cards">
+          <div class="can-make-card"><div class="can-make-card-label">Can make now</div><div class="can-make-card-value" style="color:#E24B4A;">1</div><div class="can-make-card-sub">Critical shortage</div></div>
+          <div class="can-make-card"><div class="can-make-card-label">Could make (full stock)</div><div class="can-make-card-value" style="color:#1D9E75;">40</div><div class="can-make-card-sub">If steel restocked</div></div>
+          <div class="can-make-card"><div class="can-make-card-label">In production now</div><div class="can-make-card-value">8</div><div class="can-make-card-sub">RUN-441 active</div></div>
+          <div class="can-make-card"><div class="can-make-card-label">Produced this month</div><div class="can-make-card-value">142</div><div class="can-make-card-sub">Target was 200</div></div>
+        </div>
+        <div class="bom-card">
+          <div class="bom-card-header"><span class="bom-card-title">Components — what goes into 1 Motor Unit A2</span></div>
+          <table>
+            <thead><tr><th>Component</th><th>Qty per unit</th><th>In stock</th><th>Can make</th><th>Status</th><th>Vendor</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr style="background:#FFF5F5;"><td><div class="comp-name">Steel Rod 12mm</div><div class="comp-sku">SKU: RM-1001</div></td><td><strong>20</strong> units</td><td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:6%;background:#E24B4A;"></div></div><span style="font-size:12px;font-weight:600;color:#E24B4A;">23</span></div></td><td style="font-weight:600;color:#E24B4A;">1 ⚠</td><td><span class="badge badge-red">Critical</span></td><td><a href="vendors.html" style="color:#378ADD;font-size:11px;">Acme Metals</a></td><td><a href="orders.html" style="color:#378ADD;font-size:11px;">+ Rush PO</a></td></tr>
+              <tr><td><div class="comp-name">Bearing 6205-ZZ</div><div class="comp-sku">SKU: RM-1002</div></td><td><strong>4</strong> units</td><td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:32%;background:#BA7517;"></div></div><span style="font-size:12px;font-weight:600;color:#BA7517;">51</span></div></td><td style="font-weight:600;color:#BA7517;">12</td><td><span class="badge badge-amber">Low</span></td><td><a href="vendors.html" style="color:#378ADD;font-size:11px;">FastBearings</a></td><td><a href="orders.html" style="color:#378ADD;font-size:11px;">+ Order</a></td></tr>
+              <tr><td><div class="comp-name">Copper Wire 2mm</div><div class="comp-sku">SKU: RM-1004</div></td><td><strong>3</strong> m</td><td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:100%;background:#1D9E75;"></div></div><span style="font-size:12px;font-weight:600;color:#1D9E75;">210</span></div></td><td style="font-weight:600;color:#1D9E75;">70</td><td><span class="badge badge-green">Sufficient</span></td><td><a href="vendors.html" style="color:#A32D2D;font-size:11px;">WireWorld ⚠</a></td><td><a href="runout.html" style="color:#378ADD;font-size:11px;">View stock</a></td></tr>
+              <tr><td><div class="comp-name">Hydraulic Seal</div><div class="comp-sku">SKU: RM-1003</div></td><td><strong>2</strong> units</td><td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:42%;background:#BA7517;"></div></div><span style="font-size:12px;font-weight:600;color:#BA7517;">88</span></div></td><td style="font-weight:600;color:#BA7517;">44</td><td><span class="badge badge-amber">Low</span></td><td><a href="vendors.html" style="color:#378ADD;font-size:11px;">SealPro Ltd.</a></td><td><a href="orders.html" style="color:#378ADD;font-size:11px;">+ Order</a></td></tr>
+              <tr><td><div class="comp-name">Aluminum Sheet 3mm</div><div class="comp-sku">SKU: RM-1005</div></td><td><strong>1</strong> sheet</td><td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:100%;background:#1D9E75;"></div></div><span style="font-size:12px;font-weight:600;color:#1D9E75;">340</span></div></td><td style="font-weight:600;color:#1D9E75;">340</td><td><span class="badge badge-green">Sufficient</span></td><td><a href="vendors.html" style="color:#378ADD;font-size:11px;">Acme Metals</a></td><td><a href="runout.html" style="color:#378ADD;font-size:11px;">View stock</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PUMP DETAIL -->
+      <div class="view" id="view-pump">
+        <button class="back-btn" onclick="showList()"><i class="ti ti-arrow-left"></i> Back to all products</button>
+        <div class="product-header">
+          <div class="product-header-left">
+            <div class="product-emoji-lg">🔧</div>
+            <div><div class="product-title">Pump Assembly P1</div><div class="product-subtitle">SKU: FG-2002 · 6 components · Last updated Jun 11, 2026</div></div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn"><i class="ti ti-edit"></i> Edit BOM</button>
+            <a href="production.html" class="btn btn-primary"><i class="ti ti-player-play"></i> Start production run</a>
+          </div>
+        </div>
+        <div class="bottleneck-banner" style="background:#EAF3DE;border:1px solid #7CB95A;color:#3B6D11;">
+          <i class="ti ti-circle-check" style="font-size:17px;flex-shrink:0;"></i>
+          <div><strong>All clear:</strong> You have enough components to make <strong>142 Pump Assembly P1 units</strong> right now. All components are well stocked.</div>
+        </div>
+        <div class="can-make-cards">
+          <div class="can-make-card"><div class="can-make-card-label">Can make now</div><div class="can-make-card-value" style="color:#1D9E75;">142</div><div class="can-make-card-sub">All components ready</div></div>
+          <div class="can-make-card"><div class="can-make-card-label">In production now</div><div class="can-make-card-value">12</div><div class="can-make-card-sub">RUN-442 active</div></div>
+          <div class="can-make-card"><div class="can-make-card-label">Produced this month</div><div class="can-make-card-value">67</div><div class="can-make-card-sub">Target was 80</div></div>
+          <div class="can-make-card"><div class="can-make-card-label">Components</div><div class="can-make-card-value">6</div><div class="can-make-card-sub">All green</div></div>
+        </div>
+        <div class="bom-card">
+          <div class="bom-card-header"><span class="bom-card-title">Components — what goes into 1 Pump Assembly P1</span></div>
+          <table>
+            <thead><tr><th>Component</th><th>Qty per unit</th><th>In stock</th><th>Can make</th><th>Status</th><th>Vendor</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td><div class="comp-name">Stainless Plate 6mm</div><div class="comp-sku">SKU: RM-1006</div></td><td><strong>2</strong> sheets</td><td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:100%;background:#1D9E75;"></div></div><span style="font-size:12px;font-weight:600;color:#1D9E75;">580</span></div></td><td style="font-weight:600;color:#1D9E75;">290</td><td><span class="badge badge-green">Sufficient</span></td><td><a href="vendors.html" style="color:#378ADD;font-size:11px;">Acme Metals</a></td><td><a href="runout.html" style="color:#378ADD;font-size:11px;">View</a></td></tr>
+              <tr><td><div class="comp-name">Hydraulic Seal</div><div class="comp-sku">SKU: RM-1003</div></td><td><strong>1</strong> unit</td><td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:75%;background:#1D9E75;"></div></div><span style="font-size:12px;font-weight:600;color:#1D9E75;">88</span></div></td><td style="font-weight:600;color:#1D9E75;">88</td><td><span class="badge badge-green">Sufficient</span></td><td><a href="vendors.html" style="color:#378ADD;font-size:11px;">SealPro Ltd.</a></td><td><a href="runout.html" style="color:#378ADD;font-size:11px;">View</a></td></tr>
+              <tr><td><div class="comp-name">Aluminum Sheet 3mm</div><div class="comp-sku">SKU: RM-1005</div></td><td><strong>1</strong> sheet</td><td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:100%;background:#1D9E75;"></div></div><span style="font-size:12px;font-weight:600;color:#1D9E75;">340</span></div></td><td style="font-weight:600;color:#1D9E75;">340</td><td><span class="badge badge-green">Sufficient</span></td><td><a href="vendors.html" style="color:#378ADD;font-size:11px;">Acme Metals</a></td><td><a href="runout.html" style="color:#378ADD;font-size:11px;">View</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script>
+function showDetail(product) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + product).classList.add('active');
+  const titles = { burger: 'BOM — Double Cheeseburger', motor: 'BOM — Motor Unit A2', pump: 'BOM — Pump Assembly P1' };
+  document.getElementById('page-title').textContent = titles[product] || 'Bill of Materials';
+}
+function showList() {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-list').classList.add('active');
+  document.getElementById('page-title').textContent = 'Bill of Materials';
+}
+function updateQty() {
+  const qty = parseInt(document.getElementById('qty-input').value) || 0;
+  const cheeseNeeded = qty * 2;
+  const cheeseHave = 100;
+  const result = document.getElementById('qty-result');
+  if (cheeseNeeded > cheeseHave) {
+    const shortage = cheeseNeeded - cheeseHave;
+    result.innerHTML = `Double Cheeseburgers — you need to order <strong style="color:#A32D2D;">${shortage} more cheese slices</strong> and <strong style="color:#1D9E75;">everything else is ready</strong>`;
+  } else {
+    result.innerHTML = `Double Cheeseburgers — <strong style="color:#1D9E75;">you have enough of everything! Ready to produce.</strong>`;
+  }
+}
+</script>
+</body>
+</html>

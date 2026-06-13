@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlowERP — Runout Report</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; }
+    .app { display: flex; height: 100vh; }
+    .sidebar { width: 210px; flex-shrink: 0; background: #fff; border-right: 1px solid #eee; display: flex; flex-direction: column; padding: 1rem 0; }
+    .sidebar-logo { padding: 0 1.1rem 1rem; border-bottom: 1px solid #eee; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; color: #111; text-decoration: none; }
+    .sidebar-logo i { color: #378ADD; font-size: 20px; }
+    .section-label { font-size: 10px; color: #bbb; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 1.1rem 4px; }
+    .nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 1.1rem; font-size: 13px; color: #666; cursor: pointer; text-decoration: none; border-left: 2px solid transparent; }
+    .nav-item:hover { background: #f5f5f5; color: #111; }
+    .nav-item.active { background: #f0f7ff; color: #185FA5; font-weight: 500; border-left: 2px solid #378ADD; }
+    .nav-item i { font-size: 16px; }
+    .sidebar-footer { margin-top: auto; padding: 1rem 1.1rem; border-top: 1px solid #eee; display: flex; align-items: center; gap: 8px; }
+    .avatar { width: 30px; height: 30px; border-radius: 50%; background: #378ADD; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; flex-shrink: 0; }
+    .user-name { font-size: 12px; font-weight: 500; color: #111; }
+    .user-company { font-size: 11px; color: #999; }
+    .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+    .topbar { background: #fff; border-bottom: 1px solid #eee; padding: 0.85rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+    .topbar-title { font-size: 15px; font-weight: 600; color: #111; }
+    .btn { font-size: 12px; padding: 6px 14px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
+    .btn:hover { background: #f5f5f5; }
+    .btn-primary { background: #378ADD; border-color: #378ADD; color: #fff; }
+    .btn-primary:hover { background: #185FA5; }
+    .content { padding: 1.5rem; flex: 1; }
+    .badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 500; }
+    .badge-green { background: #EAF3DE; color: #3B6D11; }
+    .badge-amber { background: #FAEEDA; color: #854F0B; }
+    .badge-red { background: #FCEBEB; color: #A32D2D; }
+    .badge-blue { background: #E6F1FB; color: #185FA5; }
+    .alert { background: #FCEBEB; border: 1px solid #F09595; border-radius: 10px; padding: 0.85rem 1.1rem; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; }
+    .alert-left { display: flex; align-items: center; gap: 10px; }
+    .alert-left i { color: #A32D2D; font-size: 17px; }
+    .alert-title { font-size: 13px; font-weight: 600; color: #A32D2D; }
+    .alert-sub { font-size: 12px; color: #C45050; }
+    .summary-cards { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 1.25rem; }
+    .summary-card { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 0.85rem 1rem; }
+    .summary-card-label { font-size: 11px; color: #999; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .summary-card-value { font-size: 22px; font-weight: 700; color: #111; }
+    .summary-card-sub { font-size: 11px; color: #999; margin-top: 2px; }
+    .filter-row { display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; }
+    .filter-tab { font-size: 11px; padding: 5px 12px; border-radius: 99px; border: 1px solid #ddd; background: transparent; color: #666; cursor: pointer; }
+    .filter-tab.active { background: #378ADD; border-color: #378ADD; color: #fff; }
+    .filter-row select { font-size: 12px; padding: 5px 10px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; margin-left: auto; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #eee; border-radius: 10px; overflow: hidden; }
+    th { text-align: left; font-weight: 500; color: #999; padding: 8px 12px; border-bottom: 1px solid #f0f0f0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; background: #fafafa; }
+    td { padding: 10px 12px; border-bottom: 1px solid #f5f5f5; color: #333; font-size: 12px; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+    .part-name { font-size: 13px; font-weight: 600; color: #111; }
+    .part-sku { font-size: 11px; color: #999; }
+    .bar-wrap { display: flex; align-items: center; gap: 8px; }
+    .bar { flex: 1; height: 6px; background: #f0f0f0; border-radius: 99px; overflow: hidden; min-width: 80px; }
+    .bar-fill { height: 100%; border-radius: 99px; }
+    .days { font-size: 12px; font-weight: 600; min-width: 55px; }
+    .action-btns { display: flex; gap: 5px; }
+    .action-btn { font-size: 11px; padding: 3px 8px; border-radius: 6px; border: 1px solid #ddd; background: transparent; color: #333; cursor: pointer; white-space: nowrap; }
+    .action-btn:hover { background: #f5f5f5; }
+    .action-btn-primary { background: #E6F1FB; border-color: #378ADD; color: #185FA5; }
+    .ai-row td { padding: 6px 12px; font-size: 11px; color: #185FA5; background: #f0f7ff; }
+    .ai-row-red td { padding: 6px 12px; font-size: 11px; color: #A32D2D; background: #FFF5F5; }
+    .live-dot { width: 7px; height: 7px; background: #1D9E75; border-radius: 50%; display: inline-block; margin-right: 5px; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <a class="sidebar-logo" href="index.html"><i class="ti ti-settings-2"></i> FlowERP</a>
+    <div class="section-label">Modules</div>
+    <a class="nav-item" href="dashboard.html"><i class="ti ti-layout-dashboard"></i> Dashboard</a>
+    <a class="nav-item active" href="runout.html"><i class="ti ti-box"></i> Inventory</a>
+    <a class="nav-item" href="orders.html"><i class="ti ti-truck"></i> Procurement</a>
+    <a class="nav-item" href="bom.html"><i class="ti ti-list-details"></i> Bill of Materials</a>
+    <a class="nav-item" href="production.html"><i class="ti ti-settings-2"></i> Production</a>
+    <a class="nav-item" href="finance.html"><i class="ti ti-receipt"></i> Finance</a>
+    <a class="nav-item" href="atrisk.html"><i class="ti ti-alert-triangle"></i> At-risk parts</a>
+    <a class="nav-item" href="vendors.html"><i class="ti ti-users"></i> Vendors</a>
+    <div class="section-label">Account</div>
+    <a class="nav-item" href="#"><i class="ti ti-settings"></i> Settings</a>
+    <a class="nav-item" href="index.html"><i class="ti ti-logout"></i> Log out</a>
+    <div class="sidebar-footer">
+      <div class="avatar">ME</div>
+      <div><div class="user-name">Matthew E.</div><div class="user-company">Ridgeline Mfg. Co.</div></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title">Runout report — live forecast</span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:12px;color:#999;"><span class="live-dot"></span>Live · updates every 15 min</span>
+        <button class="btn"><i class="ti ti-bell"></i> Set alerts</button>
+        <button class="btn btn-primary"><i class="ti ti-plus"></i> Create POs</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="alert">
+        <div class="alert-left">
+          <i class="ti ti-alert-triangle"></i>
+          <div>
+            <div class="alert-title">3 parts will run out within 5 days — assuming no new receipts</div>
+            <div class="alert-sub">Steel Rod 12mm runs out in 2 days · Bearing 6205-ZZ in 4 days · Hydraulic Seal in 5 days</div>
+          </div>
+        </div>
+        <button class="btn" style="background:#fff;border-color:#F09595;color:#A32D2D;white-space:nowrap;">Emergency reorder</button>
+      </div>
+
+      <div class="summary-cards">
+        <div class="summary-card"><div class="summary-card-label">Total parts tracked</div><div class="summary-card-value">1,284</div><div class="summary-card-sub">Across 6 warehouses</div></div>
+        <div class="summary-card"><div class="summary-card-label">Running out &lt;7 days</div><div class="summary-card-value" style="color:#E24B4A;">3</div><div class="summary-card-sub">Immediate action needed</div></div>
+        <div class="summary-card"><div class="summary-card-label">Running out 7–30 days</div><div class="summary-card-value" style="color:#BA7517;">11</div><div class="summary-card-sub">Order soon</div></div>
+        <div class="summary-card"><div class="summary-card-label">Well stocked</div><div class="summary-card-value" style="color:#1D9E75;">1,270</div><div class="summary-card-sub">No action needed</div></div>
+      </div>
+
+      <div class="filter-row">
+        <button class="filter-tab active" onclick="setTab(this)">All (1,284)</button>
+        <button class="filter-tab" onclick="setTab(this)">🔴 Critical &lt;7 days (3)</button>
+        <button class="filter-tab" onclick="setTab(this)">🟡 Warning 7–30 days (11)</button>
+        <button class="filter-tab" onclick="setTab(this)">✅ Stocked (1,270)</button>
+        <select><option>All warehouses</option><option>Warehouse A — Pittsburgh</option><option>Warehouse B — Columbus</option></select>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th>Part</th><th>On hand</th><th>Daily usage</th><th>Days until runout</th><th>Vendor</th><th>Open PO?</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          <tr style="background:#FFF5F5;">
+            <td><div class="part-name">Steel Rod 12mm</div><div class="part-sku">SKU: RM-1001 · Bay A-3</div></td>
+            <td><strong>23</strong> units</td>
+            <td style="color:#999;">~12/day</td>
+            <td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:8%;background:#E24B4A;"></div></div><span class="days" style="color:#E24B4A;">2 days ⚠</span></div></td>
+            <td><a href="vendors.html" style="color:#378ADD;font-size:12px;">Acme Metals</a></td>
+            <td><span class="badge badge-amber">PO-2041 · Jun 20</span></td>
+            <td><div class="action-btns"><button class="action-btn action-btn-primary">+ Rush PO</button><button class="action-btn">Flag</button></div></td>
+          </tr>
+          <tr class="ai-row-red"><td colspan="7"><i class="ti ti-sparkles"></i> AI: Steel Rod 12mm runs out in 2 days but PO arrives Jun 20 — 18 day gap. Call Acme Metals to expedite or find emergency stock now.</td></tr>
+
+          <tr style="background:#FFF5F5;">
+            <td><div class="part-name">Bearing 6205-ZZ</div><div class="part-sku">SKU: RM-1002 · Bay B-1</div></td>
+            <td><strong>51</strong> units</td>
+            <td style="color:#999;">~13/day</td>
+            <td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:20%;background:#E24B4A;"></div></div><span class="days" style="color:#E24B4A;">4 days ⚠</span></div></td>
+            <td><a href="vendors.html" style="color:#378ADD;font-size:12px;">FastBearings Co.</a></td>
+            <td><span class="badge" style="background:#FCEBEB;color:#A32D2D;">No open PO</span></td>
+            <td><div class="action-btns"><button class="action-btn action-btn-primary">+ Create PO</button><button class="action-btn">Flag</button></div></td>
+          </tr>
+          <tr class="ai-row-red"><td colspan="7"><i class="ti ti-sparkles"></i> AI: No open PO exists and you have 4 days of stock. FastBearings avg lead time is 9 days — you are already behind. Create a PO immediately and call to expedite.</td></tr>
+
+          <tr style="background:#FFF5F5;">
+            <td><div class="part-name">Hydraulic Seal</div><div class="part-sku">SKU: RM-1003 · Bay A-1</div></td>
+            <td><strong>88</strong> units</td>
+            <td style="color:#999;">~17/day</td>
+            <td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:25%;background:#E24B4A;"></div></div><span class="days" style="color:#E24B4A;">5 days ⚠</span></div></td>
+            <td><a href="vendors.html" style="color:#378ADD;font-size:12px;">SealPro Ltd.</a></td>
+            <td><span class="badge badge-amber">PO-2043 · Jun 28</span></td>
+            <td><div class="action-btns"><button class="action-btn action-btn-primary">+ Rush PO</button><button class="action-btn">Flag</button></div></td>
+          </tr>
+          <tr class="ai-row-red"><td colspan="7"><i class="ti ti-sparkles"></i> AI: PO arrives Jun 28 but stock runs out in 5 days (Jun 18) — 10 day gap. SealPro avg lead time is 7 days. Rush order placed today could arrive Jun 20. Call SealPro now.</td></tr>
+
+          <tr style="background:#FFFBF2;">
+            <td><div class="part-name">Copper Wire 2mm</div><div class="part-sku">SKU: RM-1004 · Bay C-1</div></td>
+            <td><strong>210</strong> units</td>
+            <td style="color:#999;">~14/day</td>
+            <td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:50%;background:#BA7517;"></div></div><span class="days" style="color:#BA7517;">15 days</span></div></td>
+            <td><a href="vendors.html" style="color:#A32D2D;font-size:12px;">WireWorld ⚠</a></td>
+            <td><span class="badge badge-amber">PO-2051 · Late</span></td>
+            <td><div class="action-btns"><button class="action-btn action-btn-primary">+ Backup PO</button><button class="action-btn">Flag</button></div></td>
+          </tr>
+          <tr class="ai-row"><td colspan="7"><i class="ti ti-sparkles"></i> AI: WireWorld is on the hound list (score 48) and their open PO is already late. 15 days of stock remaining. Recommend sourcing a backup supplier now.</td></tr>
+
+          <tr>
+            <td><div class="part-name">Aluminum Sheet 3mm</div><div class="part-sku">SKU: RM-1005 · Bay D-2</div></td>
+            <td><strong>340</strong> units</td>
+            <td style="color:#999;">~15/day</td>
+            <td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:75%;background:#1D9E75;"></div></div><span class="days" style="color:#1D9E75;">22 days</span></div></td>
+            <td><a href="vendors.html" style="color:#378ADD;font-size:12px;">Acme Metals</a></td>
+            <td><span class="badge badge-green">PO-2043 · Jun 18</span></td>
+            <td><div class="action-btns"><button class="action-btn">View PO</button></div></td>
+          </tr>
+
+          <tr>
+            <td><div class="part-name">Stainless Plate 6mm</div><div class="part-sku">SKU: RM-1006 · Bay B-4</div></td>
+            <td><strong>580</strong> units</td>
+            <td style="color:#999;">~8/day</td>
+            <td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:100%;background:#1D9E75;"></div></div><span class="days" style="color:#1D9E75;">72 days</span></div></td>
+            <td><a href="vendors.html" style="color:#378ADD;font-size:12px;">Acme Metals</a></td>
+            <td><span class="badge badge-green">Stocked</span></td>
+            <td><div class="action-btns"><button class="action-btn">View</button></div></td>
+          </tr>
+
+          <tr><td colspan="7" style="text-align:center;padding:1rem;color:#999;font-size:12px;">Showing 6 of 1,284 parts · <span style="color:#378ADD;cursor:pointer;">Load all parts</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script>
+function setTab(el) {
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>

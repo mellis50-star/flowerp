@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlowERP — Production</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; }
+    .app { display: flex; height: 100vh; }
+    .sidebar { width: 210px; flex-shrink: 0; background: #fff; border-right: 1px solid #eee; display: flex; flex-direction: column; padding: 1rem 0; }
+    .sidebar-logo { padding: 0 1.1rem 1rem; border-bottom: 1px solid #eee; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; color: #111; text-decoration: none; }
+    .sidebar-logo i { color: #378ADD; font-size: 20px; }
+    .section-label { font-size: 10px; color: #bbb; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 1.1rem 4px; }
+    .nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 1.1rem; font-size: 13px; color: #666; cursor: pointer; text-decoration: none; border-left: 2px solid transparent; }
+    .nav-item:hover { background: #f5f5f5; color: #111; }
+    .nav-item.active { background: #f0f7ff; color: #185FA5; font-weight: 500; border-left: 2px solid #378ADD; }
+    .nav-item i { font-size: 16px; }
+    .sidebar-footer { margin-top: auto; padding: 1rem 1.1rem; border-top: 1px solid #eee; display: flex; align-items: center; gap: 8px; }
+    .avatar { width: 30px; height: 30px; border-radius: 50%; background: #378ADD; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; flex-shrink: 0; }
+    .user-name { font-size: 12px; font-weight: 500; color: #111; }
+    .user-company { font-size: 11px; color: #999; }
+    .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+    .topbar { background: #fff; border-bottom: 1px solid #eee; padding: 0.85rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+    .topbar-title { font-size: 15px; font-weight: 600; color: #111; }
+    .btn { font-size: 12px; padding: 6px 14px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
+    .btn:hover { background: #f5f5f5; }
+    .btn-primary { background: #378ADD; border-color: #378ADD; color: #fff; }
+    .btn-primary:hover { background: #185FA5; }
+    .content { padding: 1.5rem; flex: 1; }
+    .badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 500; }
+    .badge-green { background: #EAF3DE; color: #3B6D11; }
+    .badge-amber { background: #FAEEDA; color: #854F0B; }
+    .badge-red { background: #FCEBEB; color: #A32D2D; }
+    .badge-blue { background: #E6F1FB; color: #185FA5; }
+    .summary-cards { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 1.25rem; }
+    .summary-card { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 0.85rem 1rem; }
+    .summary-card-label { font-size: 11px; color: #999; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .summary-card-value { font-size: 22px; font-weight: 700; color: #111; }
+    .summary-card-sub { font-size: 11px; color: #999; margin-top: 2px; }
+    .filter-row { display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; }
+    .filter-tab { font-size: 11px; padding: 5px 12px; border-radius: 99px; border: 1px solid #ddd; background: transparent; color: #666; cursor: pointer; }
+    .filter-tab.active { background: #378ADD; border-color: #378ADD; color: #fff; }
+    .card { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 10px; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .card-title { font-size: 13px; font-weight: 600; color: #111; }
+    .run-card { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 1.1rem 1.25rem; margin-bottom: 10px; }
+    .run-card.delayed { border-left: 3px solid #BA7517; }
+    .run-card.complete { border-left: 3px solid #1D9E75; opacity: 0.7; }
+    .run-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem; }
+    .run-name { font-size: 14px; font-weight: 600; color: #111; }
+    .run-id { font-size: 11px; color: #999; margin-top: 2px; }
+    .run-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 0.85rem; }
+    .run-stat-label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 3px; }
+    .run-stat-value { font-size: 14px; font-weight: 600; color: #111; }
+    .progress-wrap { margin-bottom: 0.5rem; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 11px; color: #999; margin-bottom: 5px; }
+    .progress { height: 8px; background: #f0f0f0; border-radius: 99px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 99px; transition: width 0.3s; }
+    .run-actions { display: flex; gap: 8px; margin-top: 0.85rem; padding-top: 0.85rem; border-top: 1px solid #f0f0f0; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { text-align: left; font-weight: 500; color: #999; padding: 6px 8px 8px; border-bottom: 1px solid #f0f0f0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; }
+    td { padding: 8px 8px; border-bottom: 1px solid #f5f5f5; color: #333; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <a class="sidebar-logo" href="index.html"><i class="ti ti-settings-2"></i> FlowERP</a>
+    <div class="section-label">Modules</div>
+    <a class="nav-item" href="dashboard.html"><i class="ti ti-layout-dashboard"></i> Dashboard</a>
+    <a class="nav-item" href="runout.html"><i class="ti ti-box"></i> Inventory</a>
+    <a class="nav-item" href="orders.html"><i class="ti ti-truck"></i> Procurement</a>
+    <a class="nav-item" href="bom.html"><i class="ti ti-list-details"></i> Bill of Materials</a>
+    <a class="nav-item active" href="production.html"><i class="ti ti-settings-2"></i> Production</a>
+    <a class="nav-item" href="finance.html"><i class="ti ti-receipt"></i> Finance</a>
+    <a class="nav-item" href="atrisk.html"><i class="ti ti-alert-triangle"></i> At-risk parts</a>
+    <a class="nav-item" href="vendors.html"><i class="ti ti-users"></i> Vendors</a>
+    <div class="section-label">Account</div>
+    <a class="nav-item" href="#"><i class="ti ti-settings"></i> Settings</a>
+    <a class="nav-item" href="index.html"><i class="ti ti-logout"></i> Log out</a>
+    <div class="sidebar-footer">
+      <div class="avatar">ME</div>
+      <div><div class="user-name">Matthew E.</div><div class="user-company">Ridgeline Mfg. Co.</div></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title">Production planning</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn"><i class="ti ti-calendar"></i> Schedule</button>
+        <a href="bom.html" class="btn btn-primary"><i class="ti ti-plus"></i> New production run</a>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="summary-cards">
+        <div class="summary-card"><div class="summary-card-label">Active runs</div><div class="summary-card-value">8</div><div class="summary-card-sub">3 due today</div></div>
+        <div class="summary-card"><div class="summary-card-label">Throughput</div><div class="summary-card-value" style="color:#1D9E75;">94%</div><div class="summary-card-sub">↑ 2% vs target</div></div>
+        <div class="summary-card"><div class="summary-card-label">Defect rate</div><div class="summary-card-value" style="color:#BA7517;">1.3%</div><div class="summary-card-sub">↑ 0.2% vs last week</div></div>
+        <div class="summary-card"><div class="summary-card-label">Units today</div><div class="summary-card-value">312</div><div class="summary-card-sub" style="color:#BA7517;">Target: 350</div></div>
+      </div>
+
+      <div class="filter-row">
+        <button class="filter-tab active" onclick="setTab(this)">All runs (8)</button>
+        <button class="filter-tab" onclick="setTab(this)">🟢 On track (5)</button>
+        <button class="filter-tab" onclick="setTab(this)">🟡 Delayed (2)</button>
+        <button class="filter-tab" onclick="setTab(this)">✅ Complete (1)</button>
+      </div>
+
+      <!-- RUN 1 -->
+      <div class="run-card">
+        <div class="run-top">
+          <div>
+            <div class="run-name">Motor Unit A2</div>
+            <div class="run-id">RUN-441 · Line 1 · Started Jun 13</div>
+          </div>
+          <span class="badge badge-green">On track</span>
+        </div>
+        <div class="run-stats">
+          <div><div class="run-stat-label">Units complete</div><div class="run-stat-value">164 / 200</div></div>
+          <div><div class="run-stat-label">Est. completion</div><div class="run-stat-value">Today 4pm</div></div>
+          <div><div class="run-stat-label">Defect rate</div><div class="run-stat-value" style="color:#1D9E75;">0.8%</div></div>
+          <div><div class="run-stat-label">Operator</div><div class="run-stat-value">J. Wilson</div></div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-label"><span>Progress</span><span>82%</span></div>
+          <div class="progress"><div class="progress-fill" style="width:82%;background:#1D9E75;"></div></div>
+        </div>
+        <div class="run-actions">
+          <button class="btn btn-primary"><i class="ti ti-edit"></i> Update progress</button>
+          <a href="bom.html" class="btn"><i class="ti ti-list-details"></i> View BOM</a>
+          <button class="btn"><i class="ti ti-alert-triangle"></i> Flag issue</button>
+          <button class="btn" style="margin-left:auto;"><i class="ti ti-circle-check"></i> Mark complete</button>
+        </div>
+      </div>
+
+      <!-- RUN 2 -->
+      <div class="run-card delayed">
+        <div class="run-top">
+          <div>
+            <div class="run-name">Pump Assembly P1</div>
+            <div class="run-id">RUN-442 · Line 2 · Started Jun 12</div>
+          </div>
+          <span class="badge badge-amber">Delayed</span>
+        </div>
+        <div class="run-stats">
+          <div><div class="run-stat-label">Units complete</div><div class="run-stat-value">67 / 150</div></div>
+          <div><div class="run-stat-label">Est. completion</div><div class="run-stat-value" style="color:#BA7517;">Jun 15 (late)</div></div>
+          <div><div class="run-stat-label">Defect rate</div><div class="run-stat-value" style="color:#BA7517;">2.1%</div></div>
+          <div><div class="run-stat-label">Operator</div><div class="run-stat-value">R. Santos</div></div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-label"><span>Progress</span><span>45%</span></div>
+          <div class="progress"><div class="progress-fill" style="width:45%;background:#BA7517;"></div></div>
+        </div>
+        <div style="background:#FAEEDA;border-radius:8px;padding:8px 10px;font-size:12px;color:#854F0B;margin-bottom:0.5rem;"><i class="ti ti-alert-triangle"></i> Delay reason: Machine 2B offline for maintenance since 10am. Expected back online at 3pm.</div>
+        <div class="run-actions">
+          <button class="btn btn-primary"><i class="ti ti-edit"></i> Update progress</button>
+          <a href="bom.html" class="btn"><i class="ti ti-list-details"></i> View BOM</a>
+          <button class="btn"><i class="ti ti-alert-triangle"></i> Flag issue</button>
+        </div>
+      </div>
+
+      <!-- RUN 3 -->
+      <div class="run-card">
+        <div class="run-top">
+          <div>
+            <div class="run-name">Gear Box G3</div>
+            <div class="run-id">RUN-443 · Line 3 · Started Jun 13</div>
+          </div>
+          <span class="badge badge-blue">Started</span>
+        </div>
+        <div class="run-stats">
+          <div><div class="run-stat-label">Units complete</div><div class="run-stat-value">8 / 80</div></div>
+          <div><div class="run-stat-label">Est. completion</div><div class="run-stat-value">Jun 14</div></div>
+          <div><div class="run-stat-label">Defect rate</div><div class="run-stat-value" style="color:#1D9E75;">0.0%</div></div>
+          <div><div class="run-stat-label">Operator</div><div class="run-stat-value">T. Park</div></div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-label"><span>Progress</span><span>10%</span></div>
+          <div class="progress"><div class="progress-fill" style="width:10%;background:#378ADD;"></div></div>
+        </div>
+        <div class="run-actions">
+          <button class="btn btn-primary"><i class="ti ti-edit"></i> Update progress</button>
+          <a href="bom.html" class="btn"><i class="ti ti-list-details"></i> View BOM</a>
+          <button class="btn"><i class="ti ti-alert-triangle"></i> Flag issue</button>
+        </div>
+      </div>
+
+      <!-- RUN 4 — COMPLETE -->
+      <div class="run-card complete">
+        <div class="run-top">
+          <div>
+            <div class="run-name">Valve Assembly V2</div>
+            <div class="run-id">RUN-440 · Line 1 · Completed Jun 13</div>
+          </div>
+          <span class="badge badge-green">✓ Complete</span>
+        </div>
+        <div class="run-stats">
+          <div><div class="run-stat-label">Units produced</div><div class="run-stat-value">60 / 60</div></div>
+          <div><div class="run-stat-label">Completed</div><div class="run-stat-value">Today 9:42am</div></div>
+          <div><div class="run-stat-label">Defect rate</div><div class="run-stat-value" style="color:#1D9E75;">0.5%</div></div>
+          <div><div class="run-stat-label">Operator</div><div class="run-stat-value">J. Wilson</div></div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-label"><span>Progress</span><span>100%</span></div>
+          <div class="progress"><div class="progress-fill" style="width:100%;background:#1D9E75;"></div></div>
+        </div>
+      </div>
+
+      <!-- SCHEDULE TABLE -->
+      <div class="card" style="margin-top:1rem;">
+        <div class="card-header">
+          <span class="card-title">Upcoming scheduled runs</span>
+          <a href="bom.html" class="btn btn-primary" style="font-size:11px;padding:4px 10px;"><i class="ti ti-plus"></i> Schedule run</a>
+        </div>
+        <table>
+          <thead><tr><th>Product</th><th>Qty</th><th>Start date</th><th>Line</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Motor Unit A2</td><td>200 units</td><td>Jun 16</td><td>Line 1</td><td><span class="badge badge-blue">Scheduled</span></td></tr>
+            <tr><td>Pump Assembly P1</td><td>100 units</td><td>Jun 17</td><td>Line 2</td><td><span class="badge badge-blue">Scheduled</span></td></tr>
+            <tr><td>Valve Assembly V2</td><td>80 units</td><td>Jun 18</td><td>Line 1</td><td><span class="badge badge-amber">Parts pending</span></td></tr>
+            <tr><td>Gear Box G3</td><td>60 units</td><td>Jun 20</td><td>Line 3</td><td><span class="badge badge-blue">Scheduled</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script>
+function setTab(el) {
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>
