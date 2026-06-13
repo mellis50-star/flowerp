@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlowERP — Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; }
+    .app { display: flex; height: 100vh; }
+
+    /* SIDEBAR */
+    .sidebar { width: 210px; flex-shrink: 0; background: #fff; border-right: 1px solid #eee; display: flex; flex-direction: column; padding: 1rem 0; }
+    .sidebar-logo { padding: 0 1.1rem 1rem; border-bottom: 1px solid #eee; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; color: #111; text-decoration: none; }
+    .sidebar-logo i { color: #378ADD; font-size: 20px; }
+    .section-label { font-size: 10px; color: #bbb; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 1.1rem 4px; }
+    .nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 1.1rem; font-size: 13px; color: #666; cursor: pointer; text-decoration: none; border-left: 2px solid transparent; }
+    .nav-item:hover { background: #f5f5f5; color: #111; }
+    .nav-item.active { background: #f0f7ff; color: #185FA5; font-weight: 500; border-left: 2px solid #378ADD; }
+    .nav-item i { font-size: 16px; }
+    .sidebar-footer { margin-top: auto; padding: 1rem 1.1rem; border-top: 1px solid #eee; display: flex; align-items: center; gap: 8px; }
+    .avatar { width: 30px; height: 30px; border-radius: 50%; background: #378ADD; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; flex-shrink: 0; }
+    .user-name { font-size: 12px; font-weight: 500; color: #111; }
+    .user-company { font-size: 11px; color: #999; }
+
+    /* MAIN */
+    .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+    .topbar { background: #fff; border-bottom: 1px solid #eee; padding: 0.85rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+    .topbar-title { font-size: 15px; font-weight: 600; color: #111; }
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+    .btn { font-size: 12px; padding: 6px 14px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
+    .btn:hover { background: #f5f5f5; }
+    .btn-primary { background: #378ADD; border-color: #378ADD; color: #fff; }
+    .btn-primary:hover { background: #185FA5; }
+    .content { padding: 1.5rem; flex: 1; }
+
+    /* ALERT */
+    .alert { background: #FCEBEB; border: 1px solid #F09595; border-radius: 10px; padding: 0.85rem 1.1rem; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; }
+    .alert-left { display: flex; align-items: center; gap: 10px; }
+    .alert-left i { color: #A32D2D; font-size: 17px; }
+    .alert-title { font-size: 13px; font-weight: 600; color: #A32D2D; }
+    .alert-sub { font-size: 12px; color: #C45050; }
+
+    /* METRICS */
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+    .metric { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 1rem 1.1rem; }
+    .metric-label { font-size: 11px; color: #999; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .metric-value { font-size: 26px; font-weight: 600; color: #111; }
+    .metric-sub { font-size: 11px; color: #999; margin-top: 3px; }
+    .metric-sub.up { color: #1D9E75; }
+    .metric-sub.down { color: #E24B4A; }
+
+    /* GRID */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1.25rem; }
+    .card { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem; }
+    .card-title { font-size: 13px; font-weight: 600; color: #111; }
+
+    /* TABLE */
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { text-align: left; font-weight: 500; color: #999; padding: 5px 8px 8px; border-bottom: 1px solid #f0f0f0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; }
+    td { padding: 8px 8px; border-bottom: 1px solid #f5f5f5; color: #333; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+
+    /* BADGES */
+    .badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 500; }
+    .badge-green { background: #EAF3DE; color: #3B6D11; }
+    .badge-amber { background: #FAEEDA; color: #854F0B; }
+    .badge-red { background: #FCEBEB; color: #A32D2D; }
+    .badge-blue { background: #E6F1FB; color: #185FA5; }
+
+    /* PROGRESS */
+    .progress { height: 5px; background: #f0f0f0; border-radius: 99px; overflow: hidden; margin-top: 4px; }
+    .progress-fill { height: 100%; border-radius: 99px; }
+
+    /* AI INSIGHT */
+    .ai-insight { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; background: #f0f7ff; border-radius: 8px; margin-bottom: 1rem; font-size: 12px; color: #185FA5; line-height: 1.5; }
+    .ai-insight i { margin-top: 1px; flex-shrink: 0; font-size: 14px; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <a class="sidebar-logo" href="index.html"><i class="ti ti-settings-2"></i> FlowERP</a>
+    <div class="section-label">Modules</div>
+    <a class="nav-item active" href="dashboard.html"><i class="ti ti-layout-dashboard"></i> Dashboard</a>
+    <a class="nav-item" href="#"><i class="ti ti-box"></i> Inventory</a>
+    <a class="nav-item" href="#"><i class="ti ti-truck"></i> Procurement</a>
+    <a class="nav-item" href="#"><i class="ti ti-list-details"></i> Bill of Materials</a>
+    <a class="nav-item" href="#"><i class="ti ti-settings-2"></i> Production</a>
+    <a class="nav-item" href="#"><i class="ti ti-receipt"></i> Finance</a>
+    <a class="nav-item" href="#"><i class="ti ti-alert-triangle"></i> At-risk parts</a>
+    <a class="nav-item" href="#"><i class="ti ti-users"></i> Vendors</a>
+    <div class="section-label">Account</div>
+    <a class="nav-item" href="index.html"><i class="ti ti-settings"></i> Settings</a>
+    <a class="nav-item" href="index.html"><i class="ti ti-logout"></i> Log out</a>
+    <div class="sidebar-footer">
+      <div class="avatar">ME</div>
+      <div>
+        <div class="user-name">Matthew E.</div>
+        <div class="user-company">Ridgeline Mfg. Co.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title">Good morning, Matthew 👋</span>
+      <div class="topbar-right">
+        <span style="font-size:12px;color:#999;">Friday, Jun 13, 2026</span>
+        <a href="#" class="btn"><i class="ti ti-bell"></i> Alerts</a>
+        <a href="#" class="btn btn-primary"><i class="ti ti-plus"></i> New</a>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ALERT -->
+      <div class="alert">
+        <div class="alert-left">
+          <i class="ti ti-alert-triangle"></i>
+          <div>
+            <div class="alert-title">3 parts running out within 5 days</div>
+            <div class="alert-sub">Steel Rod 12mm (2 days) · Bearing 6205-ZZ (4 days) · Hydraulic Seal (5 days)</div>
+          </div>
+        </div>
+        <a href="#" class="btn" style="background:#fff;border-color:#F09595;color:#A32D2D;">View runout report →</a>
+      </div>
+
+      <!-- AI INSIGHT -->
+      <div class="ai-insight">
+        <i class="ti ti-sparkles"></i>
+        <span><strong>AI summary:</strong> You have 5 late orders from WireWorld this month — their worst stretch of the year. Steel Rod 12mm runs out in 2 days but the next PO doesn't arrive until Jun 20. Recommend calling Acme Metals to expedite. Everything else is on track.</span>
+      </div>
+
+      <!-- METRICS -->
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">Open orders</div>
+          <div class="metric-value">47</div>
+          <div class="metric-sub">Across 15 vendors</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">At-risk parts</div>
+          <div class="metric-value" style="color:#E24B4A;">6</div>
+          <div class="metric-sub down">3 critical today</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Production runs</div>
+          <div class="metric-value">8</div>
+          <div class="metric-sub up">↑ 2 new today</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Revenue (MTD)</div>
+          <div class="metric-value">$284K</div>
+          <div class="metric-sub down">↓ 4% vs last month</div>
+        </div>
+      </div>
+
+      <!-- GRID -->
+      <div class="grid2">
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Open order status</span>
+            <a href="#" class="btn" style="font-size:11px;padding:4px 10px;">View all →</a>
+          </div>
+          <table>
+            <thead><tr><th>Vendor</th><th>PO #</th><th>Due</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Acme Metals</td><td>PO-2041</td><td>Jun 20</td><td><span class="badge badge-green">On time</span></td></tr>
+              <tr><td>FastBearings</td><td>PO-2042</td><td>Jun 17</td><td><span class="badge badge-amber">At risk</span></td></tr>
+              <tr style="background:#FFF5F5;"><td>WireWorld</td><td>PO-2051</td><td>Jun 4</td><td><span class="badge badge-red">9 days late</span></td></tr>
+              <tr><td>SealPro Ltd.</td><td>PO-2043</td><td>Jun 28</td><td><span class="badge badge-blue">Ordered</span></td></tr>
+              <tr style="background:#FFF5F5;"><td>WireWorld</td><td>PO-2052</td><td>Jun 6</td><td><span class="badge badge-red">7 days late</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Parts running out soon</span>
+            <a href="#" class="btn" style="font-size:11px;padding:4px 10px;">Runout report →</a>
+          </div>
+          <table>
+            <thead><tr><th>Part</th><th>Stock</th><th>Days left</th></tr></thead>
+            <tbody>
+              <tr style="background:#FFF5F5;"><td>Steel Rod 12mm</td><td>23 units</td><td><span class="badge badge-red">2 days ⚠</span></td></tr>
+              <tr style="background:#FFF5F5;"><td>Bearing 6205-ZZ</td><td>51 units</td><td><span class="badge badge-red">4 days ⚠</span></td></tr>
+              <tr style="background:#FFFBF2;"><td>Hydraulic Seal</td><td>88 units</td><td><span class="badge badge-amber">5 days</span></td></tr>
+              <tr style="background:#FFFBF2;"><td>Copper Wire 2mm</td><td>210 units</td><td><span class="badge badge-amber">15 days</span></td></tr>
+              <tr><td>Aluminum Sheet 3mm</td><td>340 units</td><td><span class="badge badge-green">22 days</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Production runs today</span>
+            <a href="#" class="btn" style="font-size:11px;padding:4px 10px;">View all →</a>
+          </div>
+          <table>
+            <thead><tr><th>Product</th><th>Progress</th><th>Target</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Motor Unit A2</td>
+                <td><div class="progress"><div class="progress-fill" style="width:82%;background:#1D9E75;"></div></div></td>
+                <td>200 units</td>
+                <td><span class="badge badge-green">On track</span></td>
+              </tr>
+              <tr>
+                <td>Pump Assembly P1</td>
+                <td><div class="progress"><div class="progress-fill" style="width:45%;background:#BA7517;"></div></div></td>
+                <td>150 units</td>
+                <td><span class="badge badge-amber">Delayed</span></td>
+              </tr>
+              <tr>
+                <td>Gear Box G3</td>
+                <td><div class="progress"><div class="progress-fill" style="width:10%;background:#378ADD;"></div></div></td>
+                <td>80 units</td>
+                <td><span class="badge badge-blue">Started</span></td>
+              </tr>
+              <tr>
+                <td>Valve Assembly</td>
+                <td><div class="progress"><div class="progress-fill" style="width:100%;background:#1D9E75;"></div></div></td>
+                <td>60 units</td>
+                <td><span class="badge badge-green">Complete</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Vendor scores</span>
+            <a href="#" class="btn" style="font-size:11px;padding:4px 10px;">All vendors →</a>
+          </div>
+          <table>
+            <thead><tr><th>Vendor</th><th>Score</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Acme Metals</td><td><strong style="color:#1D9E75;">94</strong></td><td><span class="badge badge-green">✓ Trusted</span></td></tr>
+              <tr><td>PrecisionCast Inc.</td><td><strong style="color:#1D9E75;">88</strong></td><td><span class="badge badge-green">✓ Trusted</span></td></tr>
+              <tr><td>SealPro Ltd.</td><td><strong style="color:#BA7517;">79</strong></td><td><span class="badge badge-amber">Monitor</span></td></tr>
+              <tr><td>FastBearings Co.</td><td><strong style="color:#BA7517;">71</strong></td><td><span class="badge badge-amber">Monitor</span></td></tr>
+              <tr><td>WireWorld</td><td><strong style="color:#E24B4A;">48</strong></td><td><span class="badge badge-red">⚠ Hound list</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>
