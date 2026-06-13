@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlowERP — Manufacturing ERP that actually works</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fff; color: #111; }
+
+    /* NAV */
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 1rem 2.5rem; border-bottom: 1px solid #eee; position: sticky; top: 0; background: #fff; z-index: 10; }
+    .nav-logo { font-size: 17px; font-weight: 600; color: #111; display: flex; align-items: center; gap: 8px; text-decoration: none; }
+    .nav-logo i { color: #378ADD; font-size: 22px; }
+    .nav-links { display: flex; align-items: center; gap: 2rem; }
+    .nav-links a { font-size: 14px; color: #555; text-decoration: none; cursor: pointer; }
+    .nav-links a:hover { color: #111; }
+    .nav-actions { display: flex; gap: 10px; }
+    .btn { font-size: 13px; padding: 8px 18px; border-radius: 8px; border: 1px solid #ddd; background: transparent; color: #111; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    .btn:hover { background: #f5f5f5; }
+    .btn-primary { background: #378ADD; border-color: #378ADD; color: #fff; }
+    .btn-primary:hover { background: #185FA5; border-color: #185FA5; }
+
+    /* HERO */
+    .hero { text-align: center; padding: 5rem 2rem 3.5rem; max-width: 700px; margin: 0 auto; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; background: #f0f7ff; border: 1px solid #cce0f5; border-radius: 99px; padding: 5px 14px; color: #185FA5; margin-bottom: 1.75rem; font-weight: 500; }
+    .hero h1 { font-size: 42px; font-weight: 700; color: #111; line-height: 1.15; margin-bottom: 1.25rem; letter-spacing: -0.02em; }
+    .hero h1 em { font-style: normal; color: #378ADD; }
+    .hero p { font-size: 16px; color: #555; line-height: 1.7; margin-bottom: 2.25rem; max-width: 500px; margin-left: auto; margin-right: auto; }
+    .hero-actions { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 2rem; }
+    .hero-actions .btn { font-size: 15px; padding: 11px 24px; }
+    .hero-proof { display: flex; align-items: center; justify-content: center; gap: 1.75rem; font-size: 13px; color: #888; }
+    .hero-proof span { display: flex; align-items: center; gap: 5px; }
+    .hero-proof i { color: #1D9E75; }
+
+    /* SCREEN PREVIEW */
+    .preview-wrap { margin: 0 2rem 4rem; border: 1px solid #e5e5e5; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 32px rgba(0,0,0,0.07); }
+    .preview-bar { background: #f5f5f5; border-bottom: 1px solid #e5e5e5; padding: 10px 14px; display: flex; align-items: center; gap: 7px; }
+    .dot { width: 11px; height: 11px; border-radius: 50%; }
+    .preview-url { font-size: 12px; color: #999; margin-left: 8px; }
+    .preview-inner { display: grid; grid-template-columns: 170px 1fr; min-height: 240px; background: #fafafa; }
+    .preview-sidebar { background: #fff; border-right: 1px solid #eee; padding: 1rem 0; }
+    .ps-logo { padding: 0 1rem 0.85rem; font-size: 14px; font-weight: 600; color: #111; border-bottom: 1px solid #eee; margin-bottom: 0.5rem; }
+    .ps-item { display: flex; align-items: center; gap: 7px; padding: 7px 1rem; font-size: 12px; color: #888; }
+    .ps-item.active { color: #111; background: #f5f5f5; font-weight: 500; border-left: 2px solid #378ADD; }
+    .ps-item i { font-size: 14px; }
+    .preview-main { padding: 1rem; }
+    .pm-metrics { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 1rem; }
+    .pm-metric { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 0.65rem 0.85rem; }
+    .pm-label { font-size: 10px; color: #999; margin-bottom: 3px; }
+    .pm-value { font-size: 17px; font-weight: 600; color: #111; }
+    .pm-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .pm-card { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 0.65rem 0.85rem; }
+    .pm-card-title { font-size: 11px; font-weight: 500; color: #111; margin-bottom: 6px; }
+    .pm-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #f5f5f5; font-size: 10px; color: #555; }
+    .pm-row:last-child { border-bottom: none; }
+    .bm { font-size: 9px; padding: 1px 5px; border-radius: 99px; font-weight: 500; }
+    .bm-g { background: #eaf3de; color: #3b6d11; }
+    .bm-a { background: #faeeda; color: #854f0b; }
+    .bm-r { background: #fcebeb; color: #a32d2d; }
+
+    /* DIVIDER */
+    .divider { height: 1px; background: #f0f0f0; margin: 0 2rem; }
+
+    /* SECTIONS */
+    .section { padding: 4rem 2.5rem; }
+    .section-header { text-align: center; margin-bottom: 2.5rem; }
+    .section-eyebrow { font-size: 12px; color: #378ADD; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 0.6rem; }
+    .section-title { font-size: 28px; font-weight: 700; color: #111; margin-bottom: 0.85rem; letter-spacing: -0.01em; }
+    .section-sub { font-size: 15px; color: #555; max-width: 480px; margin: 0 auto; line-height: 1.65; }
+
+    /* FEATURES */
+    .features-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; max-width: 960px; margin: 0 auto; }
+    .feature { background: #fafafa; border: 1px solid #eee; border-radius: 12px; padding: 1.5rem; }
+    .feature-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
+    .feature-icon i { font-size: 20px; }
+    .feature h3 { font-size: 14px; font-weight: 600; color: #111; margin-bottom: 6px; }
+    .feature p { font-size: 13px; color: #666; line-height: 1.6; }
+
+    /* PAIN POINTS */
+    .pain-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 860px; margin: 0 auto; }
+    .pain { display: flex; gap: 12px; background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 1.25rem; }
+    .pain-icon { width: 36px; height: 36px; border-radius: 8px; background: #fcebeb; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .pain-icon i { color: #a32d2d; font-size: 17px; }
+    .pain h4 { font-size: 13px; font-weight: 600; color: #111; margin-bottom: 4px; }
+    .pain p { font-size: 12px; color: #666; line-height: 1.55; }
+
+    /* PRICING */
+    .pricing-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; max-width: 900px; margin: 0 auto; }
+    .plan { border: 1px solid #e5e5e5; border-radius: 14px; padding: 1.5rem; background: #fff; }
+    .plan.featured { border: 2px solid #378ADD; }
+    .plan-badge { font-size: 11px; background: #e6f1fb; color: #185fa5; padding: 3px 10px; border-radius: 99px; font-weight: 600; display: inline-block; margin-bottom: 0.85rem; }
+    .plan h3 { font-size: 16px; font-weight: 600; color: #111; margin-bottom: 6px; }
+    .plan-price { font-size: 32px; font-weight: 700; color: #111; margin: 0.6rem 0 0.3rem; letter-spacing: -0.02em; }
+    .plan-price span { font-size: 14px; font-weight: 400; color: #888; }
+    .plan-desc { font-size: 13px; color: #666; margin-bottom: 1.25rem; padding-bottom: 1.25rem; border-bottom: 1px solid #eee; }
+    .plan-feature { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #555; padding: 5px 0; }
+    .plan-feature i { color: #1D9E75; font-size: 15px; }
+    .plan-btn { width: 100%; margin-top: 1.25rem; padding: 10px; font-size: 14px; border-radius: 8px; }
+
+    /* CTA */
+    .cta { background: #f0f7ff; border-radius: 16px; margin: 0 2rem 4rem; padding: 3.5rem 2rem; text-align: center; }
+    .cta h2 { font-size: 28px; font-weight: 700; color: #111; margin-bottom: 0.85rem; letter-spacing: -0.01em; }
+    .cta p { font-size: 15px; color: #555; margin-bottom: 2rem; }
+    .cta-actions { display: flex; align-items: center; justify-content: center; gap: 12px; }
+    .cta-actions .btn { font-size: 14px; padding: 10px 22px; }
+
+    /* FOOTER */
+    footer { border-top: 1px solid #eee; padding: 1.75rem 2.5rem; display: flex; align-items: center; justify-content: space-between; }
+    .footer-logo { font-size: 15px; font-weight: 600; color: #111; }
+    .footer-links { display: flex; gap: 2rem; }
+    .footer-links a { font-size: 13px; color: #888; text-decoration: none; }
+    .footer-links a:hover { color: #111; }
+    .footer-copy { font-size: 12px; color: #bbb; }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="#"><i class="ti ti-settings-2"></i> FlowERP</a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#">Docs</a>
+      <a href="#">Blog</a>
+    </div>
+    <div class="nav-actions">
+      <a href="dashboard.html" class="btn">Log in</a>
+      <a href="#pricing" class="btn btn-primary">Start free trial</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-badge"><i class="ti ti-sparkles"></i> AI-powered manufacturing ERP</div>
+    <h1>The ERP that actually <em>works</em> the way you do</h1>
+    <p>Stop spending 8 hours on reports SAP takes 8 clicks to generate. FlowERP handles open orders, runout reports, vendor tracking, and production planning — automatically.</p>
+    <div class="hero-actions">
+      <a href="#pricing" class="btn btn-primary">Start free — 30 days</a>
+      <a href="#features" class="btn">See features</a>
+    </div>
+    <div class="hero-proof">
+      <span><i class="ti ti-check"></i> No credit card required</span>
+      <span><i class="ti ti-check"></i> Set up in minutes</span>
+      <span><i class="ti ti-check"></i> Cancel anytime</span>
+    </div>
+  </div>
+
+  <!-- SCREEN PREVIEW -->
+  <div class="preview-wrap">
+    <div class="preview-bar">
+      <div class="dot" style="background:#ff5f57;"></div>
+      <div class="dot" style="background:#febc2e;"></div>
+      <div class="dot" style="background:#28c840;"></div>
+      <span class="preview-url">app.flowerp.com/dashboard</span>
+    </div>
+    <div class="preview-inner">
+      <div class="preview-sidebar">
+        <div class="ps-logo">FlowERP</div>
+        <div class="ps-item active"><i class="ti ti-layout-dashboard"></i> Dashboard</div>
+        <div class="ps-item"><i class="ti ti-box"></i> Inventory</div>
+        <div class="ps-item"><i class="ti ti-truck"></i> Procurement</div>
+        <div class="ps-item"><i class="ti ti-settings-2"></i> Production</div>
+        <div class="ps-item"><i class="ti ti-receipt"></i> Finance</div>
+        <div class="ps-item"><i class="ti ti-alert-triangle"></i> At-risk parts</div>
+        <div class="ps-item"><i class="ti ti-users"></i> Vendors</div>
+        <div class="ps-item"><i class="ti ti-list-details"></i> BOM</div>
+      </div>
+      <div class="preview-main">
+        <div class="pm-metrics">
+          <div class="pm-metric"><div class="pm-label">Open orders</div><div class="pm-value">47</div></div>
+          <div class="pm-metric"><div class="pm-label">At-risk parts</div><div class="pm-value">6</div></div>
+          <div class="pm-metric"><div class="pm-label">Runout in 7d</div><div class="pm-value">3</div></div>
+          <div class="pm-metric"><div class="pm-label">Vendor score</div><div class="pm-value">84%</div></div>
+        </div>
+        <div class="pm-cards">
+          <div class="pm-card">
+            <div class="pm-card-title">Open order status</div>
+            <div class="pm-row"><span>Acme Metals — PO-2041</span><span class="bm bm-g">On time</span></div>
+            <div class="pm-row"><span>FastBearings — PO-2042</span><span class="bm bm-a">At risk</span></div>
+            <div class="pm-row"><span>SealPro — PO-2043</span><span class="bm bm-r">Late</span></div>
+          </div>
+          <div class="pm-card">
+            <div class="pm-card-title">Parts running out soon</div>
+            <div class="pm-row"><span>Steel Rod 12mm</span><span class="bm bm-r">3 days</span></div>
+            <div class="pm-row"><span>Bearing 6205-ZZ</span><span class="bm bm-a">7 days</span></div>
+            <div class="pm-row"><span>Hydraulic Seal</span><span class="bm bm-a">12 days</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- FEATURES -->
+  <div class="section" id="features">
+    <div class="section-header">
+      <div class="section-eyebrow">Features</div>
+      <div class="section-title">Built by someone who's actually used SAP</div>
+      <div class="section-sub">Every feature exists because it solved a real problem. No bloat, no 47-click workflows, no $500K implementation fee.</div>
+    </div>
+    <div class="features-grid">
+      <div class="feature">
+        <div class="feature-icon" style="background:#e6f1fb;"><i class="ti ti-file-report" style="color:#185fa5;"></i></div>
+        <h3>Open order reports in seconds</h3>
+        <p>What used to take 8 hours across 15 vendors now takes one click. AI compiles, formats, and sends — automatically.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon" style="background:#eaf3de;"><i class="ti ti-alert-triangle" style="color:#3b6d11;"></i></div>
+        <h3>Live runout forecasting</h3>
+        <p>Always-on visibility into which parts will run out and when. No more surprise stockouts shutting down production.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon" style="background:#faeeda;"><i class="ti ti-bookmark" style="color:#854f0b;"></i></div>
+        <h3>At-risk parts tracker</h3>
+        <p>A dedicated watchlist for historically troublesome parts. Add notes, track patterns, never lose institutional knowledge.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon" style="background:#fbeaf0;"><i class="ti ti-users" style="color:#993556;"></i></div>
+        <h3>Vendor profiles and scoring</h3>
+        <p>Every vendor gets a real profile — not just a number. Auto scores tell you who to hound and who you can trust.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon" style="background:#fcebeb;"><i class="ti ti-checkbox" style="color:#a32d2d;"></i></div>
+        <h3>One-click vendor confirmations</h3>
+        <p>Vendors click ✅ ❌ or counter-offer on a link — no account needed. Their response updates your PO automatically.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon" style="background:#e1f5ee;"><i class="ti ti-list-details" style="color:#0f6e56;"></i></div>
+        <h3>Bill of Materials</h3>
+        <p>See exactly how many finished products you can make right now based on live inventory — bottleneck identified instantly.</p>
+      </div>
+    </div>
+
+    <!-- WHY SWITCH -->
+    <div style="margin-top:3.5rem;">
+      <div class="section-header">
+        <div class="section-eyebrow">Why switch</div>
+        <div class="section-title">SAP wasn't built for you</div>
+      </div>
+      <div class="pain-grid">
+        <div class="pain">
+          <div class="pain-icon"><i class="ti ti-clock"></i></div>
+          <div><h4>8 hours of manual reporting</h4><p>Compiling open order reports across dozens of vendors by hand every week. FlowERP does it in seconds.</p></div>
+        </div>
+        <div class="pain">
+          <div class="pain-icon"><i class="ti ti-mail"></i></div>
+          <div><h4>Email back-and-forth with vendors</h4><p>Send report → wait for reply → manually update PO. FlowERP closes this loop automatically.</p></div>
+        </div>
+        <div class="pain">
+          <div class="pain-icon"><i class="ti ti-number"></i></div>
+          <div><h4>Vendors are just numbers</h4><p>SAP shows you a vendor ID. FlowERP shows a full profile — history, score, what they supply, and notes.</p></div>
+        </div>
+        <div class="pain">
+          <div class="pain-icon"><i class="ti ti-eye-off"></i></div>
+          <div><h4>No visibility on parts running out</h4><p>You find out a part is critical when it's already gone. FlowERP shows runout timelines at all times.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- PRICING -->
+  <div class="section" id="pricing">
+    <div class="section-header">
+      <div class="section-eyebrow">Pricing</div>
+      <div class="section-title">Simple, transparent pricing</div>
+      <div class="section-sub">Start free. No implementation fees, no consultants, no surprises. Cancel anytime.</div>
+    </div>
+    <div class="pricing-grid">
+      <div class="plan">
+        <h3>Starter</h3>
+        <div class="plan-price">$99 <span>/ month</span></div>
+        <div class="plan-desc">Perfect for solo operations managers getting started</div>
+        <div class="plan-feature"><i class="ti ti-check"></i> 1 user</div>
+        <div class="plan-feature"><i class="ti ti-check"></i> All core modules</div>
+        <div class="plan-feature"><i class="ti ti-check"></i> Up to 25 vendors</div>
+        <div class="plan-feature"><i class="ti ti-check"></i> Vendor confirmation links</div>
+        <div class="plan-feature"><i class="ti ti-check"></i> Email support</div>
+        <a href="#" class="btn plan-btn">Get started</a>
+      </div>
+      <div class="plan featured">
+        <div class="plan-badge">Most popular</div>
+        <h3>Growth</h3>
+        <div class="plan-price">$299 <span>/ month</span></div>
+        <div class="plan-desc">For growing teams that need full visibility across the operation</div>
+        <div class="plan-feature"><i class="ti ti-check"></i> Up to 10 users</div>
+        <div class="plan-feature"><i class="ti ti-check"></i> All modules + messaging</div>
+        <div class="plan-feature"><i class="ti ti-check"></i> Unlimited vendors</div>
+        <div class="plan-feature"><i class="ti ti-check"></i> AI runout forecasting</div>
+        <div class="plan-feature"><i class="ti ti-check"></i> QuickBooks integration</div>
+        <div class="plan-feature"><i class="ti ti-check"></i> Priority support</div>
+        <a href="#" class="btn btn-primary plan-btn">Start free trial</a>
+      </div>
+      <div class="plan">
+        <h3>Business</h3>
+        <div class="plan-price">$799 <span>/ month</span></div>
+        <div class="plan-desc">For larger operations with advanced needs and multiple locations</div>
+        <div class="plan-feature"><i class="ti ti-check"></i> Up to 50 users</div>
+        <div class="plan-feature"><i class="ti ti-check"></i> Everything in Growth</div>
+        <div class="plan-feature"><i class="ti ti-check"></i> Multi-location support</div>
+        <div class="plan-feature"><i class="ti ti-check"></i> Advanced analytics</div>
+        <div class="plan-feature"><i class="ti ti-check"></i> API access</div>
+        <div class="plan-feature"><i class="ti ti-check"></i> Dedicated onboarding</div>
+        <a href="#" class="btn plan-btn">Contact sales</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta">
+    <h2>Ready to get your Mondays back?</h2>
+    <p>Join manufacturers who stopped fighting their ERP and started using one that works for them.</p>
+    <div class="cta-actions">
+      <a href="#pricing" class="btn btn-primary">Start free trial — 30 days</a>
+      <a href="#features" class="btn">See all features</a>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">FlowERP</div>
+    <div class="footer-links">
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="#">Support</a>
+      <a href="#">Status</a>
+    </div>
+    <div class="footer-copy">© 2026 FlowERP</div>
+  </footer>
+
+</body>
+</html>
