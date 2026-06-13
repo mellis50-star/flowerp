@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlowERP — Open Order Report</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; }
+    .app { display: flex; height: 100vh; }
+    .sidebar { width: 210px; flex-shrink: 0; background: #fff; border-right: 1px solid #eee; display: flex; flex-direction: column; padding: 1rem 0; }
+    .sidebar-logo { padding: 0 1.1rem 1rem; border-bottom: 1px solid #eee; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; color: #111; text-decoration: none; }
+    .sidebar-logo i { color: #378ADD; font-size: 20px; }
+    .section-label { font-size: 10px; color: #bbb; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 1.1rem 4px; }
+    .nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 1.1rem; font-size: 13px; color: #666; cursor: pointer; text-decoration: none; border-left: 2px solid transparent; }
+    .nav-item:hover { background: #f5f5f5; color: #111; }
+    .nav-item.active { background: #f0f7ff; color: #185FA5; font-weight: 500; border-left: 2px solid #378ADD; }
+    .nav-item i { font-size: 16px; }
+    .sidebar-footer { margin-top: auto; padding: 1rem 1.1rem; border-top: 1px solid #eee; display: flex; align-items: center; gap: 8px; }
+    .avatar { width: 30px; height: 30px; border-radius: 50%; background: #378ADD; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; flex-shrink: 0; }
+    .user-name { font-size: 12px; font-weight: 500; color: #111; }
+    .user-company { font-size: 11px; color: #999; }
+    .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+    .topbar { background: #fff; border-bottom: 1px solid #eee; padding: 0.85rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+    .topbar-title { font-size: 15px; font-weight: 600; color: #111; }
+    .btn { font-size: 12px; padding: 6px 14px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
+    .btn:hover { background: #f5f5f5; }
+    .btn-primary { background: #378ADD; border-color: #378ADD; color: #fff; }
+    .btn-primary:hover { background: #185FA5; }
+    .btn-green { background: #1D9E75; border-color: #1D9E75; color: #fff; }
+    .content { padding: 1.5rem; flex: 1; }
+    .badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 500; }
+    .badge-green { background: #EAF3DE; color: #3B6D11; }
+    .badge-amber { background: #FAEEDA; color: #854F0B; }
+    .badge-red { background: #FCEBEB; color: #A32D2D; }
+    .badge-blue { background: #E6F1FB; color: #185FA5; }
+
+    /* AI BANNER */
+    .ai-banner { background: linear-gradient(135deg, #1a3a5c, #185FA5); border-radius: 12px; padding: 1.1rem 1.4rem; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; }
+    .ai-banner h3 { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 3px; }
+    .ai-banner p { font-size: 12px; color: rgba(255,255,255,0.7); }
+    .ai-btn { font-size: 12px; padding: 6px 14px; border-radius: 8px; border: none; cursor: pointer; font-weight: 500; display: inline-flex; align-items: center; gap: 5px; }
+    .ai-btn-white { background: #fff; color: #185FA5; }
+    .ai-btn-ghost { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+
+    /* SUMMARY CARDS */
+    .summary-cards { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 1.25rem; }
+    .summary-card { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 0.85rem 1rem; }
+    .summary-card-label { font-size: 11px; color: #999; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .summary-card-value { font-size: 22px; font-weight: 700; color: #111; }
+    .summary-card-sub { font-size: 11px; color: #999; margin-top: 2px; }
+
+    /* FILTER ROW */
+    .filter-row { display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; }
+    .filter-row select { font-size: 12px; padding: 6px 10px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; }
+    .filter-row input { font-size: 12px; padding: 6px 10px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; width: 180px; }
+    .filter-tab { font-size: 11px; padding: 4px 10px; border-radius: 99px; border: 1px solid #ddd; background: transparent; color: #666; cursor: pointer; }
+    .filter-tab.active { background: #378ADD; border-color: #378ADD; color: #fff; }
+
+    /* VENDOR SECTION */
+    .vendor-section { margin-bottom: 10px; }
+    .vendor-header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: #fff; border: 1px solid #eee; border-radius: 10px; margin-bottom: 6px; cursor: pointer; }
+    .vendor-header:hover { background: #fafafa; }
+    .vendor-header.critical { border-left: 3px solid #E24B4A; }
+    .vendor-header-left { display: flex; align-items: center; gap: 10px; }
+    .vendor-avatar-sm { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; flex-shrink: 0; }
+    .vendor-header-name { font-size: 13px; font-weight: 600; color: #111; }
+    .vendor-header-meta { font-size: 11px; color: #999; }
+    .vendor-header-right { display: flex; align-items: center; gap: 8px; }
+    .orders-table { width: 100%; border-collapse: collapse; font-size: 12px; background: #fff; border: 1px solid #eee; border-radius: 10px; overflow: hidden; margin-bottom: 6px; }
+    .orders-table th { text-align: left; font-weight: 500; color: #999; padding: 7px 10px; border-bottom: 1px solid #f0f0f0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; background: #fafafa; }
+    .orders-table td { padding: 9px 10px; border-bottom: 1px solid #f5f5f5; color: #333; vertical-align: middle; }
+    .orders-table tr:last-child td { border-bottom: none; }
+    .orders-table tr:hover td { background: #fafafa; }
+    .confirm-btns { display: flex; gap: 5px; align-items: center; }
+    .c-btn { width: 28px; height: 28px; border-radius: 8px; border: 1px solid #ddd; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all 0.1s; }
+    .c-btn:hover { transform: scale(1.1); }
+    .c-btn.confirmed { background: #EAF3DE; border-color: #3B6D11; }
+    .c-btn.rejected { background: #FCEBEB; border-color: #A32D2D; }
+    .c-btn.counter { background: #FAEEDA; border-color: #854F0B; }
+    .send-row { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 6px 0 10px; }
+    .ai-insight { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; background: #f0f7ff; border-radius: 8px; margin-bottom: 6px; font-size: 12px; color: #185FA5; }
+    .ai-insight.warning { background: #FFF5F5; color: #A32D2D; }
+    .date-input { font-size: 11px; padding: 3px 6px; border-radius: 6px; border: 1px solid #ddd; background: #f9f9f9; color: #111; width: 100px; }
+    .spinner { display: none; }
+    .spinner.active { display: flex; align-items: center; gap: 10px; padding: 2rem; justify-content: center; background: #fff; border: 1px solid #eee; border-radius: 10px; margin-bottom: 1rem; }
+    .spin { width: 20px; height: 20px; border: 2px solid #eee; border-top-color: #378ADD; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <a class="sidebar-logo" href="index.html"><i class="ti ti-settings-2"></i> FlowERP</a>
+    <div class="section-label">Modules</div>
+    <a class="nav-item" href="dashboard.html"><i class="ti ti-layout-dashboard"></i> Dashboard</a>
+    <a class="nav-item" href="#"><i class="ti ti-box"></i> Inventory</a>
+    <a class="nav-item active" href="orders.html"><i class="ti ti-truck"></i> Procurement</a>
+    <a class="nav-item" href="#"><i class="ti ti-list-details"></i> Bill of Materials</a>
+    <a class="nav-item" href="#"><i class="ti ti-settings-2"></i> Production</a>
+    <a class="nav-item" href="#"><i class="ti ti-receipt"></i> Finance</a>
+    <a class="nav-item" href="#"><i class="ti ti-alert-triangle"></i> At-risk parts</a>
+    <a class="nav-item" href="vendors.html"><i class="ti ti-users"></i> Vendors</a>
+    <div class="section-label">Account</div>
+    <a class="nav-item" href="#"><i class="ti ti-settings"></i> Settings</a>
+    <a class="nav-item" href="index.html"><i class="ti ti-logout"></i> Log out</a>
+    <div class="sidebar-footer">
+      <div class="avatar">ME</div>
+      <div>
+        <div class="user-name">Matthew E.</div>
+        <div class="user-company">Ridgeline Mfg. Co.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title">Open order report</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn"><i class="ti ti-download"></i> Export all</button>
+        <button class="btn btn-green" onclick="sendAll()"><i class="ti ti-send"></i> Send all vendors</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="ai-banner">
+        <div>
+          <h3><i class="ti ti-sparkles"></i> AI open order report — generated in 4 seconds</h3>
+          <p>Compiled 47 open orders across 15 vendors · Last updated today at 8:14 AM · Previously took ~8 hours manually</p>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="ai-btn ai-btn-ghost" onclick="regenerate()"><i class="ti ti-refresh"></i> Regenerate</button>
+          <button class="ai-btn ai-btn-white"><i class="ti ti-info-circle"></i> How does this work?</button>
+        </div>
+      </div>
+
+      <div class="summary-cards">
+        <div class="summary-card"><div class="summary-card-label">Total open orders</div><div class="summary-card-value">47</div><div class="summary-card-sub">Across 15 vendors</div></div>
+        <div class="summary-card"><div class="summary-card-label">On time</div><div class="summary-card-value" style="color:#1D9E75;">31</div><div class="summary-card-sub">66% of orders</div></div>
+        <div class="summary-card"><div class="summary-card-label">At risk</div><div class="summary-card-value" style="color:#BA7517;">11</div><div class="summary-card-sub">Need follow-up</div></div>
+        <div class="summary-card"><div class="summary-card-label">Late / critical</div><div class="summary-card-value" style="color:#E24B4A;">5</div><div class="summary-card-sub">Action required</div></div>
+      </div>
+
+      <div class="filter-row">
+        <select><option>All vendors (15)</option><option>Acme Metals</option><option>FastBearings Co.</option><option>WireWorld</option></select>
+        <select><option>All statuses</option><option>On time</option><option>At risk</option><option>Late</option></select>
+        <input type="text" placeholder="Search PO # or part..." />
+        <div style="margin-left:auto;display:flex;gap:6px;">
+          <button class="filter-tab active">All (47)</button>
+          <button class="filter-tab">Needs action (16)</button>
+          <button class="filter-tab">Sent (31)</button>
+        </div>
+      </div>
+
+      <!-- SPINNER -->
+      <div class="spinner" id="spinner">
+        <div class="spin"></div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#111;">AI is generating your open order report...</div>
+          <div style="font-size:12px;color:#999;margin-top:2px;">Compiling 47 orders across 15 vendors</div>
+        </div>
+      </div>
+
+      <div id="report-content">
+
+        <!-- ACME METALS -->
+        <div class="vendor-section">
+          <div class="vendor-header" onclick="toggleVendor('acme')">
+            <div class="vendor-header-left">
+              <div class="vendor-avatar-sm" style="background:#E6F1FB;color:#185FA5;">AM</div>
+              <div>
+                <div class="vendor-header-name">Acme Metals <span class="badge badge-green" style="margin-left:6px;">Score 94</span></div>
+                <div class="vendor-header-meta">4 open orders · $14,200 total · orders@acmemetals.com</div>
+              </div>
+            </div>
+            <div class="vendor-header-right">
+              <span class="badge badge-green">3 on time</span>
+              <span class="badge badge-amber">1 at risk</span>
+              <button class="btn btn-primary" style="font-size:11px;padding:4px 10px;" onclick="event.stopPropagation();sendVendor('Acme Metals')"><i class="ti ti-send"></i> Send report</button>
+              <i class="ti ti-chevron-down" id="acme-chevron" style="color:#999;font-size:14px;transition:transform 0.2s;"></i>
+            </div>
+          </div>
+          <div id="acme-orders" style="display:none;">
+            <div class="ai-insight"><i class="ti ti-sparkles"></i> AI note: Acme Metals is performing well. PO-2044 flagged at risk based on their avg lead time of 6 days. Recommend following up if no confirmation by tomorrow.</div>
+            <table class="orders-table">
+              <thead><tr><th>PO #</th><th>Part</th><th>Qty</th><th>Due date</th><th>Status</th><th>Vendor response</th></tr></thead>
+              <tbody>
+                <tr><td>PO-2041</td><td>Steel Rod 12mm</td><td>500 units</td><td><input type="date" class="date-input" value="2026-06-20" /></td><td><span class="badge badge-green">On time</span></td><td><div class="confirm-btns"><button class="c-btn confirmed" title="Confirmed">✅</button><button class="c-btn" onclick="setResponse(this,'rejected')" title="Rejected">❌</button><button class="c-btn" onclick="setResponse(this,'counter')" title="Counter">🟡</button></div></td></tr>
+                <tr><td>PO-2042</td><td>Steel Rod 8mm</td><td>200 units</td><td><input type="date" class="date-input" value="2026-06-24" /></td><td><span class="badge badge-green">On time</span></td><td><div class="confirm-btns"><button class="c-btn confirmed">✅</button><button class="c-btn" onclick="setResponse(this,'rejected')">❌</button><button class="c-btn" onclick="setResponse(this,'counter')">🟡</button></div></td></tr>
+                <tr><td>PO-2043</td><td>Aluminum Sheet 3mm</td><td>150 units</td><td><input type="date" class="date-input" value="2026-06-28" /></td><td><span class="badge badge-green">On time</span></td><td><div class="confirm-btns"><button class="c-btn" onclick="setResponse(this,'confirmed')">✅</button><button class="c-btn" onclick="setResponse(this,'rejected')">❌</button><button class="c-btn" onclick="setResponse(this,'counter')">🟡</button></div></td></tr>
+                <tr style="background:#FFFBF2;"><td>PO-2044</td><td>Stainless Plate 6mm</td><td>80 units</td><td><input type="date" class="date-input" value="2026-07-01" /></td><td><span class="badge badge-amber">At risk</span></td><td><div class="confirm-btns"><button class="c-btn" onclick="setResponse(this,'confirmed')">✅</button><button class="c-btn" onclick="setResponse(this,'rejected')">❌</button><button class="c-btn" onclick="setResponse(this,'counter')">🟡</button><span style="font-size:10px;color:#999;">Awaiting</span></div></td></tr>
+              </tbody>
+            </table>
+            <div class="send-row">
+              <span style="font-size:11px;color:#999;">Vendor receives a link — no login required</span>
+              <button class="btn btn-primary" style="font-size:11px;" onclick="sendVendor('Acme Metals')"><i class="ti ti-send"></i> Send to Acme Metals</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- WIREWORLD -->
+        <div class="vendor-section">
+          <div class="vendor-header critical" onclick="toggleVendor('wire')">
+            <div class="vendor-header-left">
+              <div class="vendor-avatar-sm" style="background:#FCEBEB;color:#A32D2D;">WW</div>
+              <div>
+                <div class="vendor-header-name">WireWorld <span class="badge badge-red" style="margin-left:6px;">Score 48 ⚠ Hound list</span></div>
+                <div class="vendor-header-meta">5 open orders · $18,600 total · procurement@wireworld.net</div>
+              </div>
+            </div>
+            <div class="vendor-header-right">
+              <span class="badge badge-red">3 late</span>
+              <span class="badge badge-amber">2 at risk</span>
+              <button class="btn" style="font-size:11px;padding:4px 10px;background:#FCEBEB;border-color:#F09595;color:#A32D2D;" onclick="event.stopPropagation();sendVendor('WireWorld')"><i class="ti ti-send"></i> Send report</button>
+              <i class="ti ti-chevron-down" id="wire-chevron" style="color:#999;font-size:14px;transition:transform 0.2s;"></i>
+            </div>
+          </div>
+          <div id="wire-orders" style="display:none;">
+            <div class="ai-insight warning"><i class="ti ti-alert-triangle"></i> AI alert: WireWorld has 3 late orders this month — consistent with their 61% on-time rate. Recommend calling directly rather than waiting for email. Consider backup supplier for Copper Wire 2mm.</div>
+            <table class="orders-table">
+              <thead><tr><th>PO #</th><th>Part</th><th>Qty</th><th>Due date</th><th>Status</th><th>Vendor response</th></tr></thead>
+              <tbody>
+                <tr style="background:#FFF5F5;"><td>PO-2051</td><td>Copper Wire 2mm</td><td>1000m</td><td><input type="date" class="date-input" value="2026-06-04" /></td><td><span class="badge badge-red">9 days late</span></td><td><div class="confirm-btns"><button class="c-btn rejected">❌</button><button class="c-btn" onclick="setResponse(this,'confirmed')">✅</button><button class="c-btn" onclick="setResponse(this,'counter')">🟡</button><span style="font-size:10px;color:#A32D2D;">Rejected</span></div></td></tr>
+                <tr style="background:#FFF5F5;"><td>PO-2052</td><td>Copper Wire 4mm</td><td>500m</td><td><input type="date" class="date-input" value="2026-06-06" /></td><td><span class="badge badge-red">7 days late</span></td><td><div class="confirm-btns"><button class="c-btn" onclick="setResponse(this,'confirmed')">✅</button><button class="c-btn" onclick="setResponse(this,'rejected')">❌</button><button class="c-btn counter">🟡</button><span style="font-size:10px;color:#854F0B;">Counter: Jun 18</span></div></td></tr>
+                <tr style="background:#FFF5F5;"><td>PO-2053</td><td>Electrical Cable 6mm</td><td>200m</td><td><input type="date" class="date-input" value="2026-06-08" /></td><td><span class="badge badge-red">5 days late</span></td><td><div class="confirm-btns"><button class="c-btn" onclick="setResponse(this,'confirmed')">✅</button><button class="c-btn" onclick="setResponse(this,'rejected')">❌</button><button class="c-btn" onclick="setResponse(this,'counter')">🟡</button><span style="font-size:10px;color:#999;">Awaiting</span></div></td></tr>
+              </tbody>
+            </table>
+            <div class="send-row">
+              <span style="font-size:11px;color:#999;">Vendor receives a link — no login required</span>
+              <button class="btn btn-primary" style="font-size:11px;" onclick="sendVendor('WireWorld')"><i class="ti ti-send"></i> Send to WireWorld</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- FASTBEARINGS -->
+        <div class="vendor-section">
+          <div class="vendor-header" onclick="toggleVendor('fast')">
+            <div class="vendor-header-left">
+              <div class="vendor-avatar-sm" style="background:#FAEEDA;color:#854F0B;">FB</div>
+              <div>
+                <div class="vendor-header-name">FastBearings Co. <span class="badge badge-amber" style="margin-left:6px;">Score 71</span></div>
+                <div class="vendor-header-meta">3 open orders · $8,400 total · orders@fastbearings.com</div>
+              </div>
+            </div>
+            <div class="vendor-header-right">
+              <span class="badge badge-green">1 on time</span>
+              <span class="badge badge-amber">2 at risk</span>
+              <button class="btn btn-primary" style="font-size:11px;padding:4px 10px;" onclick="event.stopPropagation();sendVendor('FastBearings Co.')"><i class="ti ti-send"></i> Send report</button>
+              <i class="ti ti-chevron-down" id="fast-chevron" style="color:#999;font-size:14px;transition:transform 0.2s;"></i>
+            </div>
+          </div>
+          <div id="fast-orders" style="display:none;">
+            <div class="ai-insight"><i class="ti ti-sparkles"></i> AI note: 2 orders approaching risk window based on FastBearings avg lead time of 9 days. Recommend sending report today to get confirmation before end of week.</div>
+            <table class="orders-table">
+              <thead><tr><th>PO #</th><th>Part</th><th>Qty</th><th>Due date</th><th>Status</th><th>Vendor response</th></tr></thead>
+              <tbody>
+                <tr><td>PO-2061</td><td>Bearing 6205-ZZ</td><td>300 units</td><td><input type="date" class="date-input" value="2026-06-25" /></td><td><span class="badge badge-green">On time</span></td><td><div class="confirm-btns"><button class="c-btn confirmed">✅</button><button class="c-btn" onclick="setResponse(this,'rejected')">❌</button><button class="c-btn" onclick="setResponse(this,'counter')">🟡</button></div></td></tr>
+                <tr style="background:#FFFBF2;"><td>PO-2062</td><td>Bearing 6305-ZZ</td><td>150 units</td><td><input type="date" class="date-input" value="2026-06-27" /></td><td><span class="badge badge-amber">At risk</span></td><td><div class="confirm-btns"><button class="c-btn" onclick="setResponse(this,'confirmed')">✅</button><button class="c-btn" onclick="setResponse(this,'rejected')">❌</button><button class="c-btn" onclick="setResponse(this,'counter')">🟡</button><span style="font-size:10px;color:#999;">Awaiting</span></div></td></tr>
+                <tr style="background:#FFFBF2;"><td>PO-2063</td><td>Thrust Bearing</td><td>50 units</td><td><input type="date" class="date-input" value="2026-06-29" /></td><td><span class="badge badge-amber">At risk</span></td><td><div class="confirm-btns"><button class="c-btn" onclick="setResponse(this,'confirmed')">✅</button><button class="c-btn" onclick="setResponse(this,'rejected')">❌</button><button class="c-btn" onclick="setResponse(this,'counter')">🟡</button><span style="font-size:10px;color:#999;">Awaiting</span></div></td></tr>
+              </tbody>
+            </table>
+            <div class="send-row">
+              <span style="font-size:11px;color:#999;">Vendor receives a link — no login required</span>
+              <button class="btn btn-primary" style="font-size:11px;" onclick="sendVendor('FastBearings Co.')"><i class="ti ti-send"></i> Send to FastBearings Co.</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align:center;padding:1rem;font-size:12px;color:#999;">Showing 3 of 15 vendors · <span style="color:#378ADD;cursor:pointer;">Load all vendors</span></div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleVendor(id) {
+  const orders = document.getElementById(id + '-orders');
+  const chevron = document.getElementById(id + '-chevron');
+  const open = orders.style.display === 'block';
+  orders.style.display = open ? 'none' : 'block';
+  chevron.style.transform = open ? '' : 'rotate(180deg)';
+}
+function setResponse(btn, type) {
+  const btns = btn.closest('.confirm-btns').querySelectorAll('.c-btn');
+  btns.forEach(b => b.className = 'c-btn');
+  btn.classList.add(type);
+  const existing = btn.closest('.confirm-btns').querySelector('span');
+  if (existing) existing.remove();
+  const label = document.createElement('span');
+  label.style.fontSize = '10px';
+  if (type === 'confirmed') { label.style.color = '#3B6D11'; label.textContent = 'Confirmed'; }
+  if (type === 'rejected') { label.style.color = '#A32D2D'; label.textContent = 'Rejected'; }
+  if (type === 'counter') { label.style.color = '#854F0B'; label.textContent = 'Counter offer'; }
+  btn.closest('.confirm-btns').appendChild(label);
+}
+function sendVendor(name) {
+  alert('Report sent to ' + name + '!\n\nThey will receive a secure email link to confirm, reject, or counter each order line.\n\nNo login required on their end.');
+}
+function sendAll() {
+  alert('Open order reports sent to all 15 vendors!\n\nEach vendor receives a unique secure link. You\'ll see responses update here in real time.');
+}
+function regenerate() {
+  const spinner = document.getElementById('spinner');
+  const content = document.getElementById('report-content');
+  spinner.classList.add('active');
+  content.style.display = 'none';
+  setTimeout(() => {
+    spinner.classList.remove('active');
+    content.style.display = 'block';
+  }, 2500);
+}
+</script>
+</body>
+</html>
