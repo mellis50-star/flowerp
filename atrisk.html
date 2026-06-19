@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FlowERP — At-Risk Parts</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -63,12 +64,10 @@
     .note-text { font-size: 12px; color: #333; line-height: 1.5; }
     .note-input-row { display: flex; gap: 6px; margin-top: 8px; }
     .note-input-row input { flex: 1; font-size: 12px; padding: 7px 10px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; }
-    .history-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid #f5f5f5; font-size: 12px; }
-    .history-row:last-child { border-bottom: none; }
-    .history-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
     .action-row { display: flex; gap: 8px; padding-top: 1rem; border-top: 1px solid #f0f0f0; margin-top: 1rem; }
     .add-card { border: 1px dashed #ddd; border-radius: 12px; padding: 1.5rem; text-align: center; cursor: pointer; color: #999; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; }
     .add-card:hover { background: #fafafa; color: #111; }
+    .loading { text-align: center; padding: 2rem; color: #999; font-size: 13px; }
   </style>
 </head>
 <body>
@@ -85,7 +84,7 @@
     <a class="nav-item active" href="atrisk.html"><i class="ti ti-alert-triangle"></i> At-risk parts</a>
     <a class="nav-item" href="vendors.html"><i class="ti ti-users"></i> Vendors</a>
     <div class="section-label">Account</div>
-    <a class="nav-item" href="#"><i class="ti ti-settings"></i> Settings</a>
+    <a class="nav-item" href="index.html"><i class="ti ti-settings"></i> Settings</a>
     <a class="nav-item" href="index.html"><i class="ti ti-logout"></i> Log out</a>
     <div class="sidebar-footer">
       <div class="avatar">ME</div>
@@ -98,194 +97,198 @@
       <span class="topbar-title">At-risk parts tracker</span>
       <div style="display:flex;gap:8px;">
         <button class="btn"><i class="ti ti-bell"></i> Set alerts</button>
-        <button class="btn btn-primary" onclick="alert('Add part form coming soon!')"><i class="ti ti-plus"></i> Add part to watchlist</button>
+        <button class="btn btn-primary" onclick="addPartToWatchlist()"><i class="ti ti-plus"></i> Add to watchlist</button>
       </div>
     </div>
 
     <div class="content">
       <div class="summary-cards">
-        <div class="summary-card"><div class="summary-card-label">On watchlist</div><div class="summary-card-value">9</div><div class="summary-card-sub">Parts being tracked</div></div>
-        <div class="summary-card"><div class="summary-card-label">Critical right now</div><div class="summary-card-value" style="color:#E24B4A;">3</div><div class="summary-card-sub">Immediate attention</div></div>
-        <div class="summary-card"><div class="summary-card-label">Issues this month</div><div class="summary-card-value" style="color:#BA7517;">7</div><div class="summary-card-sub">Stockouts or delays</div></div>
-        <div class="summary-card"><div class="summary-card-label">Resolved this month</div><div class="summary-card-value" style="color:#1D9E75;">4</div><div class="summary-card-sub">Back to normal</div></div>
+        <div class="summary-card"><div class="summary-card-label">On watchlist</div><div class="summary-card-value" id="total-watchlist">—</div><div class="summary-card-sub">Parts being tracked</div></div>
+        <div class="summary-card"><div class="summary-card-label">Critical right now</div><div class="summary-card-value" id="critical-count" style="color:#E24B4A;">—</div><div class="summary-card-sub">Immediate attention</div></div>
+        <div class="summary-card"><div class="summary-card-label">Warning</div><div class="summary-card-value" id="warning-count" style="color:#BA7517;">—</div><div class="summary-card-sub">Order soon</div></div>
+        <div class="summary-card"><div class="summary-card-label">Watching</div><div class="summary-card-value" id="watch-count" style="color:#378ADD;">—</div><div class="summary-card-sub">Monitoring</div></div>
       </div>
 
       <div class="filter-row">
-        <button class="filter-tab active" onclick="setTab(this)">All (9)</button>
-        <button class="filter-tab" onclick="setTab(this)">🔴 Critical (3)</button>
-        <button class="filter-tab" onclick="setTab(this)">🟡 Warning (4)</button>
-        <button class="filter-tab" onclick="setTab(this)">🔵 Watch (2)</button>
-        <input type="text" class="search-input" placeholder="Search parts..." />
+        <button class="filter-tab active" onclick="setTab(this, 'all')">All</button>
+        <button class="filter-tab" onclick="setTab(this, 'critical')">🔴 Critical</button>
+        <button class="filter-tab" onclick="setTab(this, 'warning')">🟡 Warning</button>
+        <button class="filter-tab" onclick="setTab(this, 'watch')">🔵 Watch</button>
+        <input type="text" class="search-input" placeholder="Search parts..." oninput="filterParts()" id="search-input" />
       </div>
 
-      <!-- PART 1 -->
-      <div class="part-card critical">
-        <div class="part-header" onclick="togglePart('p1')">
-          <div class="part-left">
-            <div class="part-icon" style="background:#FCEBEB;">⚠️</div>
-            <div>
-              <div class="part-name">Steel Rod 12mm <span class="badge badge-red" style="margin-left:6px;">Critical</span></div>
-              <div class="part-meta">
-                <span><i class="ti ti-box"></i> SKU: RM-1001</span>
-                <span><i class="ti ti-users"></i> Acme Metals</span>
-                <span><i class="ti ti-clock"></i> 2 days until runout</span>
-                <span><i class="ti ti-alert-circle"></i> On watchlist 6 months</span>
-              </div>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:11px;color:#999;">Last issue: Jun 10</span>
-            <i class="ti ti-chevron-down" id="p1-chevron" style="color:#999;font-size:14px;transition:transform 0.2s;"></i>
-          </div>
-        </div>
-        <div class="part-body" id="p1-body">
-          <div class="part-stats">
-            <div><div class="stat-label">On hand</div><div class="stat-value">23 units</div></div>
-            <div><div class="stat-label">Daily usage</div><div class="stat-value">~12/day</div></div>
-            <div><div class="stat-label">Runout</div><div class="stat-value" style="color:#E24B4A;">2 days</div></div>
-            <div><div class="stat-label">Issues this yr</div><div class="stat-value" style="color:#E24B4A;">8 times</div></div>
-          </div>
-          <div style="margin-bottom:1rem;">
-            <div style="font-size:12px;font-weight:600;color:#111;margin-bottom:8px;">Notes <span style="font-weight:400;color:#999;">3 notes</span></div>
-            <div class="note-item"><div class="note-meta">📌 Pinned · Jun 10 · You</div><div class="note-text">This part runs short almost every month. Root cause is Acme's lead time varies wildly between 5 and 14 days. Need to keep a minimum buffer of 150 units at all times — not the current 50 unit reorder point.</div></div>
-            <div class="note-item"><div class="note-meta">May 22 · You</div><div class="note-text">Called Mike at Acme — he said their steel supplier has had rolling delays. Situation may persist through Q3. Consider dual sourcing.</div></div>
-            <div class="note-input-row">
-              <input type="text" placeholder="Add a note..." id="note-p1" />
-              <button class="btn btn-primary" onclick="saveNote('p1')">Save</button>
-            </div>
-          </div>
-          <div>
-            <div style="font-size:12px;font-weight:600;color:#111;margin-bottom:8px;">Issue history</div>
-            <div class="history-row"><div class="history-dot" style="background:#E24B4A;"></div><span style="flex:1;">Stockout — production halted 6hrs</span><span style="color:#999;">Apr 14</span></div>
-            <div class="history-row"><div class="history-dot" style="background:#BA7517;"></div><span style="flex:1;">Late delivery from Acme — 4 days overdue</span><span style="color:#999;">May 3</span></div>
-            <div class="history-row"><div class="history-dot" style="background:#E24B4A;"></div><span style="flex:1;">Stockout — 2hr production delay</span><span style="color:#999;">May 18</span></div>
-            <div class="history-row"><div class="history-dot" style="background:#BA7517;"></div><span style="flex:1;">Running low — emergency PO created</span><span style="color:#999;">Jun 10</span></div>
-          </div>
-          <div class="action-row">
-            <button class="btn btn-primary"><i class="ti ti-plus"></i> Rush PO</button>
-            <a href="runout.html" class="btn"><i class="ti ti-chart-line"></i> View runout</a>
-            <a href="vendors.html" class="btn"><i class="ti ti-users"></i> View vendor</a>
-            <button class="btn" style="margin-left:auto;color:#A32D2D;border-color:#F09595;">Remove from watchlist</button>
-          </div>
-        </div>
-      </div>
+      <div id="parts-list"><div class="loading">Loading at-risk parts from database...</div></div>
 
-      <!-- PART 2 -->
-      <div class="part-card warning">
-        <div class="part-header" onclick="togglePart('p2')">
-          <div class="part-left">
-            <div class="part-icon" style="background:#FAEEDA;">⚡</div>
-            <div>
-              <div class="part-name">Bearing 6205-ZZ <span class="badge badge-amber" style="margin-left:6px;">Warning</span></div>
-              <div class="part-meta">
-                <span><i class="ti ti-box"></i> SKU: RM-1002</span>
-                <span><i class="ti ti-users"></i> FastBearings Co.</span>
-                <span><i class="ti ti-clock"></i> 4 days until runout</span>
-                <span><i class="ti ti-alert-circle"></i> No open PO</span>
-              </div>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:11px;color:#999;">Last issue: Jun 1</span>
-            <i class="ti ti-chevron-down" id="p2-chevron" style="color:#999;font-size:14px;transition:transform 0.2s;"></i>
-          </div>
-        </div>
-        <div class="part-body" id="p2-body">
-          <div class="part-stats">
-            <div><div class="stat-label">On hand</div><div class="stat-value">51 units</div></div>
-            <div><div class="stat-label">Daily usage</div><div class="stat-value">~13/day</div></div>
-            <div><div class="stat-label">Runout</div><div class="stat-value" style="color:#E24B4A;">4 days</div></div>
-            <div><div class="stat-label">Issues this yr</div><div class="stat-value" style="color:#BA7517;">5 times</div></div>
-          </div>
-          <div style="margin-bottom:1rem;">
-            <div style="font-size:12px;font-weight:600;color:#111;margin-bottom:8px;">Notes</div>
-            <div class="note-item"><div class="note-meta">Jun 1 · You</div><div class="note-text">FastBearings lead time has been creeping up — was 6 days, now averaging 9. New contact is Lisa (lisa@fastbearings.com).</div></div>
-            <div class="note-input-row">
-              <input type="text" placeholder="Add a note..." id="note-p2" />
-              <button class="btn btn-primary" onclick="saveNote('p2')">Save</button>
-            </div>
-          </div>
-          <div class="action-row">
-            <button class="btn btn-primary"><i class="ti ti-plus"></i> Create PO</button>
-            <a href="runout.html" class="btn"><i class="ti ti-chart-line"></i> View runout</a>
-            <a href="vendors.html" class="btn"><i class="ti ti-users"></i> View vendor</a>
-          </div>
-        </div>
-      </div>
-
-      <!-- PART 3 -->
-      <div class="part-card watch">
-        <div class="part-header" onclick="togglePart('p3')">
-          <div class="part-left">
-            <div class="part-icon" style="background:#E6F1FB;">👁️</div>
-            <div>
-              <div class="part-name">Copper Wire 2mm <span class="badge badge-blue" style="margin-left:6px;">Watching</span></div>
-              <div class="part-meta">
-                <span><i class="ti ti-box"></i> SKU: RM-1004</span>
-                <span><i class="ti ti-users"></i> WireWorld ⚠</span>
-                <span><i class="ti ti-clock"></i> 15 days until runout</span>
-                <span><i class="ti ti-alert-circle"></i> PO already late</span>
-              </div>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:11px;color:#999;">Last issue: Jun 4</span>
-            <i class="ti ti-chevron-down" id="p3-chevron" style="color:#999;font-size:14px;transition:transform 0.2s;"></i>
-          </div>
-        </div>
-        <div class="part-body" id="p3-body">
-          <div class="part-stats">
-            <div><div class="stat-label">On hand</div><div class="stat-value">210 units</div></div>
-            <div><div class="stat-label">Daily usage</div><div class="stat-value">~14/day</div></div>
-            <div><div class="stat-label">Runout</div><div class="stat-value" style="color:#BA7517;">15 days</div></div>
-            <div><div class="stat-label">Issues this yr</div><div class="stat-value" style="color:#BA7517;">6 times</div></div>
-          </div>
-          <div style="margin-bottom:1rem;">
-            <div style="font-size:12px;font-weight:600;color:#111;margin-bottom:8px;">Notes</div>
-            <div class="note-item"><div class="note-meta">📌 Pinned · May 30 · You</div><div class="note-text">WireWorld has been unreliable all year. PO-2051 is already 9 days late. Actively sourcing backup supplier — contacted ElectroCable Inc. for a quote. Do NOT rely solely on WireWorld for this part.</div></div>
-            <div class="note-input-row">
-              <input type="text" placeholder="Add a note..." id="note-p3" />
-              <button class="btn btn-primary" onclick="saveNote('p3')">Save</button>
-            </div>
-          </div>
-          <div class="action-row">
-            <button class="btn btn-primary"><i class="ti ti-plus"></i> Backup PO</button>
-            <a href="runout.html" class="btn"><i class="ti ti-chart-line"></i> View runout</a>
-            <a href="vendors.html" class="btn"><i class="ti ti-users"></i> View vendor</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="add-card" onclick="alert('Add part form coming soon!')">
+      <div class="add-card" onclick="addPartToWatchlist()">
         <i class="ti ti-plus" style="font-size:20px;"></i> Add another part to watchlist
       </div>
-
     </div>
   </div>
 </div>
+
 <script>
-function togglePart(id) {
-  const body = document.getElementById(id + '-body');
-  const chevron = document.getElementById(id + '-chevron');
-  body.classList.toggle('open');
-  chevron.style.transform = body.classList.contains('open') ? 'rotate(180deg)' : '';
-}
-function setTab(el) {
-  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-}
-function saveNote(partId) {
-  const input = document.getElementById('note-' + partId);
-  const text = input.value.trim();
-  if (!text) return;
-  const notesSection = input.closest('div[style]') || input.parentElement.parentElement;
-  const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  const div = document.createElement('div');
-  div.className = 'note-item';
-  div.innerHTML = `<div class="note-meta">${today} · You</div><div class="note-text">${text}</div>`;
-  input.parentElement.before(div);
-  input.value = '';
-}
+  const { createClient } = supabase;
+  const db = createClient(
+    'https://sxpmubxcmdpptqbknwzh.supabase.co',
+    'sb_publishable_b8pKBMLXtEzEPtUPGsZhlA_1sOdAcTc'
+  );
+
+  let allAtRiskParts = [];
+  let currentFilter = 'all';
+  const partNotes = {};
+
+  function getDaysLeft(part) {
+    return part.daily_usage > 0 ? Math.floor(part.qty_on_hand / part.daily_usage) : 999;
+  }
+
+  function getRiskLevel(days) {
+    if (days <= 7) return 'critical';
+    if (days <= 20) return 'warning';
+    return 'watch';
+  }
+
+  function getRiskIcon(level) {
+    if (level === 'critical') return { icon: '⚠️', bg: '#FCEBEB' };
+    if (level === 'warning') return { icon: '⚡', bg: '#FAEEDA' };
+    return { icon: '👁️', bg: '#E6F1FB' };
+  }
+
+  function renderParts(parts) {
+    const list = document.getElementById('parts-list');
+    if (parts.length === 0) {
+      list.innerHTML = '<div class="loading">No at-risk parts found.</div>';
+      return;
+    }
+
+    list.innerHTML = parts.map(p => {
+      const days = getDaysLeft(p);
+      const level = getRiskLevel(days);
+      const { icon, bg } = getRiskIcon(level);
+      const badgeClass = level === 'critical' ? 'badge-red' : level === 'warning' ? 'badge-amber' : 'badge-blue';
+      const badgeText = level === 'critical' ? 'Critical' : level === 'warning' ? 'Warning' : 'Watching';
+      const notes = partNotes[p.id] || [];
+
+      return `
+        <div class="part-card ${level}">
+          <div class="part-header" onclick="togglePart('${p.id}')">
+            <div class="part-left">
+              <div class="part-icon" style="background:${bg};">${icon}</div>
+              <div>
+                <div class="part-name">${p.name} <span class="badge ${badgeClass}" style="margin-left:6px;">${badgeText}</span></div>
+                <div class="part-meta">
+                  <span><i class="ti ti-box"></i> SKU: ${p.sku}</span>
+                  <span><i class="ti ti-clock"></i> ${days === 999 ? 'No usage data' : days + ' days until runout'}</span>
+                  ${p.location ? `<span><i class="ti ti-map-pin"></i> ${p.location}</span>` : ''}
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <i class="ti ti-chevron-down" id="chevron-${p.id}" style="color:#999;font-size:14px;transition:transform 0.2s;"></i>
+            </div>
+          </div>
+          <div class="part-body" id="body-${p.id}">
+            <div class="part-stats">
+              <div><div class="stat-label">On hand</div><div class="stat-value">${p.qty_on_hand} units</div></div>
+              <div><div class="stat-label">Daily usage</div><div class="stat-value">~${p.daily_usage}/day</div></div>
+              <div><div class="stat-label">Runout</div><div class="stat-value" style="color:${level === 'critical' ? '#E24B4A' : level === 'warning' ? '#BA7517' : '#378ADD'};">${days === 999 ? '—' : days + ' days'}</div></div>
+              <div><div class="stat-label">Reorder point</div><div class="stat-value">${p.reorder_point} units</div></div>
+            </div>
+            <div style="margin-bottom:1rem;">
+              <div style="font-size:12px;font-weight:600;color:#111;margin-bottom:8px;">Notes</div>
+              <div id="notes-list-${p.id}">
+                ${notes.length === 0 ? '<div class="note-item"><div class="note-meta">System</div><div class="note-text">Part added to watchlist automatically based on stock levels. Add notes to track issues.</div></div>' : notes.map(n => `<div class="note-item"><div class="note-meta">${n.date} · You</div><div class="note-text">${n.text}</div></div>`).join('')}
+              </div>
+              <div class="note-input-row">
+                <input type="text" placeholder="Add a note..." id="note-${p.id}" />
+                <button class="btn btn-primary" onclick="saveNote('${p.id}')">Save</button>
+              </div>
+            </div>
+            <div class="action-row">
+              <button class="btn btn-primary" onclick="updateQty('${p.id}', '${p.name}', ${p.qty_on_hand})"><i class="ti ti-plus"></i> Update qty</button>
+              <a href="runout.html" class="btn"><i class="ti ti-chart-line"></i> View runout</a>
+              <a href="vendors.html" class="btn"><i class="ti ti-users"></i> View vendor</a>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  async function loadAtRiskParts() {
+    const { data, error } = await db.from('parts').select('*');
+    if (error) { console.error(error); return; }
+
+    allAtRiskParts = data
+      .map(p => ({ ...p, daysLeft: getDaysLeft(p), riskLevel: getRiskLevel(getDaysLeft(p)) }))
+      .filter(p => p.riskLevel !== 'ok' || p.qty_on_hand <= p.reorder_point)
+      .sort((a, b) => a.daysLeft - b.daysLeft);
+
+    const critical = allAtRiskParts.filter(p => p.riskLevel === 'critical');
+    const warning = allAtRiskParts.filter(p => p.riskLevel === 'warning');
+    const watch = allAtRiskParts.filter(p => p.riskLevel === 'watch');
+
+    document.getElementById('total-watchlist').textContent = allAtRiskParts.length;
+    document.getElementById('critical-count').textContent = critical.length;
+    document.getElementById('warning-count').textContent = warning.length;
+    document.getElementById('watch-count').textContent = watch.length;
+
+    applyFilter();
+  }
+
+  function applyFilter() {
+    const search = document.getElementById('search-input').value.toLowerCase();
+    let filtered = allAtRiskParts;
+    if (currentFilter !== 'all') filtered = filtered.filter(p => p.riskLevel === currentFilter);
+    if (search) filtered = filtered.filter(p => p.name.toLowerCase().includes(search));
+    renderParts(filtered);
+  }
+
+  function filterParts() { applyFilter(); }
+
+  function setTab(el, filter) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    applyFilter();
+  }
+
+  function togglePart(id) {
+    const body = document.getElementById('body-' + id);
+    const chevron = document.getElementById('chevron-' + id);
+    body.classList.toggle('open');
+    chevron.style.transform = body.classList.contains('open') ? 'rotate(180deg)' : '';
+  }
+
+  function saveNote(partId) {
+    const input = document.getElementById('note-' + partId);
+    const text = input.value.trim();
+    if (!text) return;
+    if (!partNotes[partId]) partNotes[partId] = [];
+    const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    partNotes[partId].unshift({ date: today, text });
+    const list = document.getElementById('notes-list-' + partId);
+    const div = document.createElement('div');
+    div.className = 'note-item';
+    div.innerHTML = `<div class="note-meta">${today} · You</div><div class="note-text">${text}</div>`;
+    list.insertBefore(div, list.firstChild);
+    input.value = '';
+  }
+
+  async function updateQty(id, name, currentQty) {
+    const newQty = prompt(`Update quantity for ${name}:\nCurrent: ${currentQty} units\n\nEnter new quantity:`, currentQty);
+    if (newQty === null || newQty === '') return;
+    const qty = parseInt(newQty);
+    if (isNaN(qty) || qty < 0) { alert('Please enter a valid number.'); return; }
+    const { error } = await db.from('parts').update({ qty_on_hand: qty }).eq('id', id);
+    if (error) { alert('Error: ' + error.message); return; }
+    alert(`✅ ${name} updated to ${qty} units!`);
+    loadAtRiskParts();
+  }
+
+  function addPartToWatchlist() {
+    alert('To add parts to the watchlist, update their stock levels in the Inventory page. Parts with low stock automatically appear here.');
+  }
+
+  loadAtRiskParts();
 </script>
 </body>
 </html>

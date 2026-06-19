@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FlowERP — Finance</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -55,11 +56,11 @@
     .bar-col-fill { width: 100%; border-radius: 4px 4px 0 0; background: #378ADD; min-height: 4px; }
     .bar-col-label { font-size: 10px; color: #999; }
     .bar-col-value { font-size: 10px; color: #111; font-weight: 500; }
-    .overdue-banner { background: #FCEBEB; border: 1px solid #F09595; border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; }
-    .overdue-left { display: flex; align-items: center; gap: 10px; }
-    .overdue-left i { color: #A32D2D; font-size: 17px; }
-    .overdue-title { font-size: 13px; font-weight: 600; color: #A32D2D; }
-    .overdue-sub { font-size: 12px; color: #C45050; }
+    .ai-banner { background: #f0f7ff; border: 1px solid #cce0f5; border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 10px; font-size: 12px; color: #185FA5; }
+    .loading { text-align: center; padding: 2rem; color: #999; font-size: 13px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
+    .form-group label { font-size: 11px; color: #999; display: block; margin-bottom: 4px; }
+    .form-group input, .form-group select { width: 100%; font-size: 12px; padding: 7px 10px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; }
   </style>
 </head>
 <body>
@@ -76,7 +77,7 @@
     <a class="nav-item" href="atrisk.html"><i class="ti ti-alert-triangle"></i> At-risk parts</a>
     <a class="nav-item" href="vendors.html"><i class="ti ti-users"></i> Vendors</a>
     <div class="section-label">Account</div>
-    <a class="nav-item" href="#"><i class="ti ti-settings"></i> Settings</a>
+    <a class="nav-item" href="index.html"><i class="ti ti-settings"></i> Settings</a>
     <a class="nav-item" href="index.html"><i class="ti ti-logout"></i> Log out</a>
     <div class="sidebar-footer">
       <div class="avatar">ME</div>
@@ -89,103 +90,204 @@
       <span class="topbar-title">Finance & invoicing</span>
       <div style="display:flex;gap:8px;">
         <button class="btn"><i class="ti ti-download"></i> Export report</button>
-        <button class="btn btn-primary"><i class="ti ti-plus"></i> New invoice</button>
+        <button class="btn btn-primary" onclick="toggleInvoiceForm()"><i class="ti ti-plus"></i> New invoice</button>
       </div>
     </div>
 
     <div class="content">
 
-      <div class="overdue-banner">
-        <div class="overdue-left">
-          <i class="ti ti-alert-triangle"></i>
-          <div>
-            <div class="overdue-title">$22,100 overdue — TechFab Inc. invoice is 12 days past due</div>
-            <div class="overdue-sub">INV-8802 was due Jun 1 · Send a reminder or escalate to collections</div>
-          </div>
-        </div>
-        <button class="btn" style="background:#fff;border-color:#F09595;color:#A32D2D;white-space:nowrap;"><i class="ti ti-send"></i> Send reminder</button>
+      <div class="ai-banner">
+        <i class="ti ti-sparkles" style="font-size:16px;flex-shrink:0;"></i>
+        <span id="ai-finance-summary">Loading financial summary from database...</span>
       </div>
 
       <div class="summary-cards">
-        <div class="summary-card"><div class="summary-card-label">Revenue (MTD)</div><div class="summary-card-value">$284K</div><div class="summary-card-sub" style="color:#E24B4A;">↓ 4% vs last month</div></div>
-        <div class="summary-card"><div class="summary-card-label">COGS</div><div class="summary-card-value">$191K</div><div class="summary-card-sub">67% of revenue</div></div>
-        <div class="summary-card"><div class="summary-card-label">Gross margin</div><div class="summary-card-value" style="color:#1D9E75;">33%</div><div class="summary-card-sub" style="color:#1D9E75;">↑ 1% vs last month</div></div>
-        <div class="summary-card"><div class="summary-card-label">Outstanding AR</div><div class="summary-card-value" style="color:#BA7517;">$68K</div><div class="summary-card-sub">14 open invoices</div></div>
+        <div class="summary-card"><div class="summary-card-label">Total vendors</div><div class="summary-card-value" id="total-vendors">—</div><div class="summary-card-sub">Active suppliers</div></div>
+        <div class="summary-card"><div class="summary-card-label">Open POs</div><div class="summary-card-value" id="open-pos">—</div><div class="summary-card-sub">In procurement</div></div>
+        <div class="summary-card"><div class="summary-card-label">Avg vendor score</div><div class="summary-card-value" id="avg-score" style="color:#1D9E75;">—</div><div class="summary-card-sub">Supplier health</div></div>
+        <div class="summary-card"><div class="summary-card-label">Parts tracked</div><div class="summary-card-value" id="parts-tracked">—</div><div class="summary-card-sub">In inventory</div></div>
       </div>
 
-      <!-- REVENUE CHART -->
-      <div class="card" style="margin-bottom:1rem;">
-        <div class="card-header"><span class="card-title">Monthly revenue — last 6 months</span></div>
-        <div class="revenue-chart">
-          <div class="bar-col"><div class="bar-col-value">$241K</div><div class="bar-col-fill" style="height:72px;opacity:0.5;"></div><div class="bar-col-label">Jan</div></div>
-          <div class="bar-col"><div class="bar-col-value">$258K</div><div class="bar-col-fill" style="height:78px;opacity:0.6;"></div><div class="bar-col-label">Feb</div></div>
-          <div class="bar-col"><div class="bar-col-value">$295K</div><div class="bar-col-fill" style="height:88px;opacity:0.7;"></div><div class="bar-col-label">Mar</div></div>
-          <div class="bar-col"><div class="bar-col-value">$312K</div><div class="bar-col-fill" style="height:94px;opacity:0.8;"></div><div class="bar-col-label">Apr</div></div>
-          <div class="bar-col"><div class="bar-col-value">$296K</div><div class="bar-col-fill" style="height:89px;opacity:0.9;"></div><div class="bar-col-label">May</div></div>
-          <div class="bar-col"><div class="bar-col-value">$284K</div><div class="bar-col-fill" style="height:85px;"></div><div class="bar-col-label">Jun</div></div>
+      <!-- NEW INVOICE FORM -->
+      <div class="card" id="invoice-form" style="display:none;margin-bottom:1rem;">
+        <div class="card-header"><span class="card-title">New invoice</span><button class="btn" onclick="toggleInvoiceForm()">Cancel</button></div>
+        <div class="form-row">
+          <div class="form-group"><label>Invoice #</label><input type="text" id="inv-number" placeholder="INV-8810" /></div>
+          <div class="form-group"><label>Customer</label><input type="text" id="inv-customer" placeholder="Customer name" /></div>
+          <div class="form-group"><label>Amount ($)</label><input type="number" id="inv-amount" placeholder="10000" /></div>
+          <div class="form-group"><label>Due date</label><input type="date" id="inv-due" /></div>
         </div>
-        <div style="display:flex;gap:1.5rem;font-size:12px;color:#666;margin-top:0.5rem;">
-          <span><strong style="color:#111;">$284K</strong> revenue this month</span>
-          <span><strong style="color:#111;">$191K</strong> cost of goods sold</span>
-          <span><strong style="color:#1D9E75;">$93K</strong> gross profit</span>
-          <span><strong style="color:#1D9E75;">33%</strong> margin</span>
-        </div>
+        <button class="btn btn-primary" onclick="createInvoice()"><i class="ti ti-check"></i> Create invoice</button>
       </div>
 
       <div class="grid2">
+
         <div class="card">
-          <div class="card-header"><span class="card-title">Recent invoices</span><button class="btn btn-primary" style="font-size:11px;padding:4px 10px;"><i class="ti ti-plus"></i> New invoice</button></div>
+          <div class="card-header"><span class="card-title">Vendor health overview</span><a href="vendors.html" class="btn" style="font-size:11px;padding:4px 10px;">All vendors →</a></div>
           <table>
-            <thead><tr><th>Invoice</th><th>Customer</th><th>Amount</th><th>Due</th><th>Status</th></tr></thead>
-            <tbody>
-              <tr><td>INV-8801</td><td>BuildCorp Ltd.</td><td>$18,400</td><td>Jun 5</td><td><span class="badge badge-green">Paid</span></td></tr>
-              <tr style="background:#FFF5F5;"><td>INV-8802</td><td>TechFab Inc.</td><td>$22,100</td><td>Jun 1</td><td><span class="badge badge-red">Overdue</span></td></tr>
-              <tr><td>INV-8803</td><td>MachineWorks</td><td>$9,800</td><td>Jun 20</td><td><span class="badge badge-blue">Sent</span></td></tr>
-              <tr><td>INV-8804</td><td>SteelForm Co.</td><td>$14,200</td><td>Jun 22</td><td><span class="badge badge-blue">Sent</span></td></tr>
-              <tr><td>INV-8805</td><td>BuildCorp Ltd.</td><td>$31,500</td><td>Jun 30</td><td><span class="badge badge-amber">Draft</span></td></tr>
-            </tbody>
+            <thead><tr><th>Vendor</th><th>Score</th><th>On-time</th><th>Status</th></tr></thead>
+            <tbody id="vendor-finance-tbody"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
           </table>
         </div>
 
         <div class="card">
-          <div class="card-header"><span class="card-title">Cost breakdown (MTD)</span></div>
-          <div style="margin-bottom:0.85rem;">
-            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span style="color:#333;">Raw materials</span><span style="font-weight:600;">$112,000 <span style="color:#999;font-weight:400;">(59%)</span></span></div>
-            <div class="bar"><div class="bar-fill" style="width:59%;background:#378ADD;"></div></div>
-          </div>
-          <div style="margin-bottom:0.85rem;">
-            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span style="color:#333;">Labor</span><span style="font-weight:600;">$48,000 <span style="color:#999;font-weight:400;">(25%)</span></span></div>
-            <div class="bar"><div class="bar-fill" style="width:25%;background:#1D9E75;"></div></div>
-          </div>
-          <div style="margin-bottom:0.85rem;">
-            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span style="color:#333;">Overhead</span><span style="font-weight:600;">$21,000 <span style="color:#999;font-weight:400;">(11%)</span></span></div>
-            <div class="bar"><div class="bar-fill" style="width:11%;background:#BA7517;"></div></div>
-          </div>
-          <div>
-            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span style="color:#333;">Logistics</span><span style="font-weight:600;">$10,000 <span style="color:#999;font-weight:400;">(5%)</span></span></div>
-            <div class="bar"><div class="bar-fill" style="width:5%;background:#D4537E;"></div></div>
-          </div>
-          <div style="margin-top:1rem;padding-top:0.85rem;border-top:1px solid #f0f0f0;">
-            <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="font-weight:600;color:#111;">Total COGS</span><span style="font-weight:700;color:#111;">$191,000</span></div>
-          </div>
+          <div class="card-header"><span class="card-title">Procurement overview</span><a href="orders.html" class="btn" style="font-size:11px;padding:4px 10px;">All POs →</a></div>
+          <table>
+            <thead><tr><th>PO #</th><th>Part</th><th>Qty</th><th>Status</th></tr></thead>
+            <tbody id="po-finance-tbody"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
+          </table>
         </div>
+
       </div>
 
       <div class="card">
-        <div class="card-header"><span class="card-title">Top customers by revenue (MTD)</span></div>
+        <div class="card-header"><span class="card-title">Invoices</span></div>
         <table>
-          <thead><tr><th>Customer</th><th>Revenue</th><th>Invoices</th><th>Avg payment time</th><th>Status</th></tr></thead>
-          <tbody>
-            <tr><td>BuildCorp Ltd.</td><td><strong>$49,900</strong></td><td>2</td><td style="color:#1D9E75;">8 days</td><td><span class="badge badge-green">Good standing</span></td></tr>
-            <tr><td>SteelForm Co.</td><td><strong>$41,200</strong></td><td>3</td><td style="color:#1D9E75;">12 days</td><td><span class="badge badge-green">Good standing</span></td></tr>
-            <tr><td>MachineWorks</td><td><strong>$38,600</strong></td><td>4</td><td style="color:#BA7517;">22 days</td><td><span class="badge badge-amber">Slow payer</span></td></tr>
-            <tr style="background:#FFF5F5;"><td>TechFab Inc.</td><td><strong>$22,100</strong></td><td>1</td><td style="color:#E24B4A;">42 days</td><td><span class="badge badge-red">Overdue</span></td></tr>
+          <thead><tr><th>Invoice</th><th>Customer</th><th>Amount</th><th>Due</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="invoices-tbody">
+            <tr><td>INV-8801</td><td>BuildCorp Ltd.</td><td>$18,400</td><td>Jun 5</td><td><span class="badge badge-green">Paid</span></td><td><button class="btn" style="font-size:11px;padding:3px 8px;">View</button></td></tr>
+            <tr style="background:#FFF5F5;"><td>INV-8802</td><td>TechFab Inc.</td><td>$22,100</td><td>Jun 1</td><td><span class="badge badge-red">Overdue</span></td><td><button class="btn" style="font-size:11px;padding:3px 8px;background:#FCEBEB;border-color:#F09595;color:#A32D2D;">Send reminder</button></td></tr>
+            <tr><td>INV-8803</td><td>MachineWorks</td><td>$9,800</td><td>Jun 20</td><td><span class="badge badge-blue">Sent</span></td><td><button class="btn" style="font-size:11px;padding:3px 8px;">View</button></td></tr>
+            <tr><td>INV-8804</td><td>SteelForm Co.</td><td>$14,200</td><td>Jun 22</td><td><span class="badge badge-blue">Sent</span></td><td><button class="btn" style="font-size:11px;padding:3px 8px;">View</button></td></tr>
           </tbody>
         </table>
+        <div id="new-invoices-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Cost breakdown — live from inventory</span></div>
+        <div id="cost-breakdown"><div class="loading">Calculating from database...</div></div>
       </div>
 
     </div>
   </div>
 </div>
+
+<script>
+  const { createClient } = supabase;
+  const db = createClient(
+    'https://sxpmubxcmdpptqbknwzh.supabase.co',
+    'sb_publishable_b8pKBMLXtEzEPtUPGsZhlA_1sOdAcTc'
+  );
+
+  let newInvoices = [];
+
+  async function loadFinanceData() {
+    const [vendorsRes, partsRes, posRes] = await Promise.all([
+      db.from('vendors').select('*').order('score', { ascending: false }),
+      db.from('parts').select('*'),
+      db.from('purchase_orders').select('*, vendors(name), parts(name)')
+    ]);
+
+    if (vendorsRes.error || partsRes.error || posRes.error) return;
+
+    const vendors = vendorsRes.data;
+    const parts = partsRes.data;
+    const pos = posRes.data;
+
+    // Summary cards
+    const avgScore = vendors.length > 0 ? Math.round(vendors.reduce((s, v) => s + v.score, 0) / vendors.length) : 0;
+    document.getElementById('total-vendors').textContent = vendors.length;
+    document.getElementById('open-pos').textContent = pos.length;
+    document.getElementById('avg-score').textContent = avgScore;
+    document.getElementById('parts-tracked').textContent = parts.length;
+
+    // AI summary
+    const houndVendors = vendors.filter(v => v.status === 'hound');
+    const criticalParts = parts.filter(p => p.daily_usage > 0 && Math.floor(p.qty_on_hand / p.daily_usage) <= 7);
+    document.getElementById('ai-finance-summary').innerHTML =
+      `<strong>AI financial summary:</strong> You have ${vendors.length} active vendors with an average score of ${avgScore}. ${houndVendors.length > 0 ? houndVendors.map(v => v.name).join(', ') + ' are on the hound list — consider finding replacements to reduce supply chain risk.' : 'All vendors are performing acceptably.'} ${criticalParts.length > 0 ? criticalParts.length + ' parts need urgent reordering which may impact production costs.' : 'Inventory levels look healthy.'}`;
+
+    // Vendor table
+    document.getElementById('vendor-finance-tbody').innerHTML = vendors.map(v => {
+      const scoreColor = v.score >= 85 ? '#1D9E75' : v.score >= 65 ? '#BA7517' : '#E24B4A';
+      const badgeClass = v.status === 'trusted' ? 'badge-green' : v.status === 'hound' ? 'badge-red' : 'badge-amber';
+      const badgeText = v.status === 'trusted' ? '✓ Trusted' : v.status === 'hound' ? '⚠ Hound' : 'Monitor';
+      return `<tr>
+        <td><strong>${v.name}</strong></td>
+        <td style="color:${scoreColor};font-weight:600;">${v.score}</td>
+        <td>${v.on_time_percent}%</td>
+        <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+      </tr>`;
+    }).join('');
+
+    // PO table
+    if (pos.length === 0) {
+      document.getElementById('po-finance-tbody').innerHTML = '<tr><td colspan="4" style="text-align:center;color:#999;padding:1rem;">No purchase orders yet — <a href="orders.html" style="color:#378ADD;">create one</a></td></tr>';
+    } else {
+      document.getElementById('po-finance-tbody').innerHTML = pos.slice(0, 5).map(o => {
+        const statusClass = o.status === 'received' ? 'badge-green' : o.status === 'in_transit' ? 'badge-amber' : 'badge-blue';
+        return `<tr>
+          <td>${o.po_number}</td>
+          <td>${o.parts?.name || '—'}</td>
+          <td>${o.quantity}</td>
+          <td><span class="badge ${statusClass}">${o.status}</span></td>
+        </tr>`;
+      }).join('');
+    }
+
+    // Cost breakdown
+    const totalParts = parts.reduce((s, p) => s + p.qty_on_hand, 0);
+    const criticalCount = criticalParts.length;
+    document.getElementById('cost-breakdown').innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:0.75rem;">
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+            <span style="color:#333;">Total parts in inventory</span>
+            <span style="font-weight:600;">${totalParts} units across ${parts.length} SKUs</span>
+          </div>
+          <div class="bar"><div class="bar-fill" style="width:100%;background:#378ADD;"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+            <span style="color:#333;">Critical parts (need reorder)</span>
+            <span style="font-weight:600;color:#E24B4A;">${criticalCount} parts — immediate action needed</span>
+          </div>
+          <div class="bar"><div class="bar-fill" style="width:${parts.length > 0 ? (criticalCount/parts.length*100) : 0}%;background:#E24B4A;"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+            <span style="color:#333;">Active purchase orders</span>
+            <span style="font-weight:600;">${pos.length} POs with ${pos.reduce((s,o) => s + o.quantity, 0)} total units ordered</span>
+          </div>
+          <div class="bar"><div class="bar-fill" style="width:${Math.min(100, pos.length * 10)}%;background:#1D9E75;"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+            <span style="color:#333;">Vendor reliability</span>
+            <span style="font-weight:600;color:${avgScore >= 75 ? '#1D9E75' : '#BA7517'};">Average score ${avgScore}/100</span>
+          </div>
+          <div class="bar"><div class="bar-fill" style="width:${avgScore}%;background:${avgScore >= 75 ? '#1D9E75' : '#BA7517'};"></div></div>
+        </div>
+      </div>`;
+  }
+
+  function toggleInvoiceForm() {
+    const form = document.getElementById('invoice-form');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function createInvoice() {
+    const number = document.getElementById('inv-number').value;
+    const customer = document.getElementById('inv-customer').value;
+    const amount = document.getElementById('inv-amount').value;
+    const due = document.getElementById('inv-due').value;
+    if (!number || !customer || !amount || !due) { alert('Please fill in all fields.'); return; }
+    const dueFormatted = new Date(due).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const list = document.getElementById('new-invoices-list');
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:8px 8px;border-bottom:1px solid #f5f5f5;font-size:12px;';
+    div.innerHTML = `<span>${number}</span><span>${customer}</span><span>$${parseInt(amount).toLocaleString()}</span><span>${dueFormatted}</span><span class="badge badge-amber">Draft</span>`;
+    list.appendChild(div);
+    alert('✅ Invoice ' + number + ' created!');
+    toggleInvoiceForm();
+    document.getElementById('inv-number').value = '';
+    document.getElementById('inv-customer').value = '';
+    document.getElementById('inv-amount').value = '';
+    document.getElementById('inv-due').value = '';
+  }
+
+  loadFinanceData();
+</script>
 </body>
 </html>

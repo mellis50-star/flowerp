@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FlowERP — Vendors</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -74,28 +75,21 @@
     .score-card-sub { font-size: 11px; color: #999; margin-top: 2px; }
     .overall-score { display: flex; align-items: center; gap: 14px; padding: 1rem; background: #f5f5f5; border-radius: 10px; margin-bottom: 1rem; }
     .overall-num { font-size: 42px; font-weight: 700; line-height: 1; }
-    .overall-label { font-size: 12px; color: #666; margin-bottom: 8px; }
     .score-breakdown { display: flex; flex-direction: column; gap: 5px; flex: 1; }
     .score-row-detail { display: flex; align-items: center; gap: 8px; font-size: 11px; }
     .score-row-detail span:first-child { width: 110px; color: #666; }
     .mini-bar { flex: 1; height: 4px; background: #e0e0e0; border-radius: 99px; overflow: hidden; }
     .mini-fill { height: 100%; border-radius: 99px; }
     .score-row-detail span:last-child { width: 30px; text-align: right; font-weight: 600; color: #111; }
-    .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
-    .card { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 1rem 1.25rem; }
+    .card { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
     .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem; }
     .card-title { font-size: 13px; font-weight: 600; color: #111; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th { text-align: left; font-weight: 500; color: #999; padding: 5px 8px 8px; border-bottom: 1px solid #f0f0f0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; }
-    td { padding: 8px 8px; border-bottom: 1px solid #f5f5f5; color: #333; }
-    tr:last-child td { border-bottom: none; }
-    .supply-item { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f5f5f5; font-size: 12px; }
-    .supply-item:last-child { border-bottom: none; }
     .note-item { padding: 8px 10px; background: #f9f9f9; border-radius: 8px; margin-bottom: 6px; }
     .note-meta { font-size: 10px; color: #999; margin-bottom: 3px; }
     .note-text { font-size: 12px; color: #333; line-height: 1.5; }
     .note-input-row { display: flex; gap: 6px; margin-top: 8px; }
     .note-input-row input { flex: 1; font-size: 12px; padding: 7px 10px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; }
+    .loading { text-align: center; padding: 2rem; color: #999; font-size: 13px; }
   </style>
 </head>
 <body>
@@ -125,205 +119,220 @@
       <span class="topbar-title" id="page-title">Vendor profiles</span>
       <div style="display:flex;gap:8px;">
         <button class="btn"><i class="ti ti-upload"></i> Import</button>
-        <button class="btn btn-primary"><i class="ti ti-plus"></i> Add vendor</button>
+        <button class="btn btn-primary" onclick="showAddForm()"><i class="ti ti-plus"></i> Add vendor</button>
       </div>
     </div>
 
     <div class="content">
+
+      <!-- LIST VIEW -->
       <div class="view active" id="view-list">
         <div class="filter-row">
-          <input type="text" placeholder="Search vendors..." />
-          <button class="filter-tab active">All (23)</button>
-          <button class="filter-tab">✅ Trusted (14)</button>
-          <button class="filter-tab">⚠️ Hound (5)</button>
-          <button class="filter-tab">🆕 New (4)</button>
+          <input type="text" id="search-input" placeholder="Search vendors..." oninput="filterVendors()" />
+          <button class="filter-tab active" onclick="filterByStatus(this, 'all')">All</button>
+          <button class="filter-tab" onclick="filterByStatus(this, 'trusted')">✅ Trusted</button>
+          <button class="filter-tab" onclick="filterByStatus(this, 'hound')">⚠️ Hound</button>
+          <button class="filter-tab" onclick="filterByStatus(this, 'monitor')">👁 Monitor</button>
         </div>
-        <div class="vendor-grid">
-          <div class="vendor-card" onclick="showDetail('acme')">
-            <div class="vendor-card-top"><div class="vendor-avatar" style="background:#E6F1FB;color:#185FA5;">AM</div><div><div class="vendor-name">Acme Metals</div><div class="vendor-type">Raw materials · Steel & aluminum</div></div></div>
-            <div class="score-row"><span class="score-label">Overall score</span><span class="score-pill score-high">94 / 100</span></div>
-            <div class="score-bar"><div class="score-fill" style="width:94%;background:#639922;"></div></div>
-            <div class="vendor-tags"><span class="badge badge-green">✓ Trusted</span><span class="tag">On-time 96%</span><span class="tag">3yr relationship</span></div>
-          </div>
-          <div class="vendor-card" onclick="showDetail('fast')">
-            <div class="vendor-card-top"><div class="vendor-avatar" style="background:#FAEEDA;color:#854F0B;">FB</div><div><div class="vendor-name">FastBearings Co.</div><div class="vendor-type">Components · Bearings & seals</div></div></div>
-            <div class="score-row"><span class="score-label">Overall score</span><span class="score-pill score-mid">71 / 100</span></div>
-            <div class="score-bar"><div class="score-fill" style="width:71%;background:#BA7517;"></div></div>
-            <div class="vendor-tags"><span class="tag">On-time 78%</span><span class="tag">Quality issues ×2</span></div>
-          </div>
-          <div class="vendor-card" onclick="showDetail('wire')">
-            <div class="vendor-card-top"><div class="vendor-avatar" style="background:#FCEBEB;color:#A32D2D;">WW</div><div><div class="vendor-name">WireWorld</div><div class="vendor-type">Electrical · Wire & cable</div></div></div>
-            <div class="score-row"><span class="score-label">Overall score</span><span class="score-pill score-low">48 / 100</span></div>
-            <div class="score-bar"><div class="score-fill" style="width:48%;background:#E24B4A;"></div></div>
-            <div class="vendor-tags"><span class="badge badge-red">⚠ Hound list</span><span class="tag">On-time 61%</span><span class="tag">Late ×7 this yr</span></div>
-          </div>
-          <div class="vendor-card" onclick="showDetail('acme')">
-            <div class="vendor-card-top"><div class="vendor-avatar" style="background:#E1F5EE;color:#0F6E56;">SP</div><div><div class="vendor-name">SealPro Ltd.</div><div class="vendor-type">Components · Hydraulic seals</div></div></div>
-            <div class="score-row"><span class="score-label">Overall score</span><span class="score-pill score-mid">79 / 100</span></div>
-            <div class="score-bar"><div class="score-fill" style="width:79%;background:#1D9E75;"></div></div>
-            <div class="vendor-tags"><span class="tag">On-time 82%</span><span class="tag">2yr relationship</span></div>
-          </div>
-          <div class="vendor-card" onclick="showDetail('acme')">
-            <div class="vendor-card-top"><div class="vendor-avatar" style="background:#EEEDFE;color:#3C3489;">PC</div><div><div class="vendor-name">PrecisionCast Inc.</div><div class="vendor-type">Manufacturing · Cast parts</div></div></div>
-            <div class="score-row"><span class="score-label">Overall score</span><span class="score-pill score-high">88 / 100</span></div>
-            <div class="score-bar"><div class="score-fill" style="width:88%;background:#534AB7;"></div></div>
-            <div class="vendor-tags"><span class="badge badge-green">✓ Trusted</span><span class="tag">On-time 91%</span></div>
-          </div>
-          <div class="add-card" onclick="alert('Add vendor form coming soon!')"><i class="ti ti-plus" style="font-size:22px;"></i> Add vendor</div>
+        <div class="vendor-grid" id="vendor-grid">
+          <div class="loading">Loading vendors from database...</div>
         </div>
       </div>
 
-      <div class="view" id="view-acme">
+      <!-- DETAIL VIEW -->
+      <div class="view" id="view-detail">
         <button class="back-btn" onclick="showList()"><i class="ti ti-arrow-left"></i> Back to all vendors</button>
-        <div class="profile-header">
-          <div class="profile-left">
-            <div class="profile-avatar" style="background:#E6F1FB;color:#185FA5;">AM</div>
-            <div><div class="profile-name">Acme Metals</div><div class="profile-meta"><span><i class="ti ti-map-pin"></i> Pittsburgh, PA</span><span><i class="ti ti-calendar"></i> Since 2021</span><span><i class="ti ti-phone"></i> (412) 555-0184</span><span><i class="ti ti-mail"></i> orders@acmemetals.com</span></div></div>
-          </div>
-          <div style="display:flex;gap:8px;">
-            <a href="orders.html" class="btn"><i class="ti ti-file-report"></i> Send open order report</a>
-            <button class="btn btn-primary"><i class="ti ti-plus"></i> New PO</button>
-          </div>
-        </div>
-        <div class="overall-score">
-          <div class="overall-num" style="color:#639922;">94</div>
-          <div style="flex:1;">
-            <div class="overall-label">Overall vendor score — <span class="badge badge-green">✓ Trusted — can be left alone</span></div>
-            <div class="score-breakdown">
-              <div class="score-row-detail"><span>On-time delivery</span><div class="mini-bar"><div class="mini-fill" style="width:96%;background:#639922;"></div></div><span>96%</span></div>
-              <div class="score-row-detail"><span>Quality</span><div class="mini-bar"><div class="mini-fill" style="width:98%;background:#639922;"></div></div><span>98%</span></div>
-              <div class="score-row-detail"><span>Responsiveness</span><div class="mini-bar"><div class="mini-fill" style="width:90%;background:#639922;"></div></div><span>90%</span></div>
-              <div class="score-row-detail"><span>Pricing accuracy</span><div class="mini-bar"><div class="mini-fill" style="width:92%;background:#639922;"></div></div><span>92%</span></div>
-            </div>
-          </div>
-        </div>
-        <div class="score-cards">
-          <div class="score-card"><div class="score-card-label">YTD spend</div><div class="score-card-value">$84K</div><div class="score-card-sub">Across 34 POs</div></div>
-          <div class="score-card"><div class="score-card-label">Avg lead time</div><div class="score-card-value">6.2 days</div><div class="score-card-sub" style="color:#1D9E75;">↓ improving</div></div>
-          <div class="score-card"><div class="score-card-label">Open POs</div><div class="score-card-value">3</div><div class="score-card-sub">$12,400 value</div></div>
-          <div class="score-card"><div class="score-card-label">Late deliveries</div><div class="score-card-value">2</div><div class="score-card-sub">Out of 34 this yr</div></div>
-        </div>
-        <div class="profile-grid">
-          <div class="card">
-            <div class="card-header"><span class="card-title">What they supply</span></div>
-            <div class="supply-item"><span>Steel Rod 12mm</span><span class="badge badge-green">Active</span></div>
-            <div class="supply-item"><span>Steel Rod 8mm</span><span class="badge badge-green">Active</span></div>
-            <div class="supply-item"><span>Aluminum Sheet 3mm</span><span class="badge badge-green">Active</span></div>
-            <div class="supply-item"><span>Stainless Plate 6mm</span><span class="badge badge-amber">Seasonal</span></div>
-            <div class="supply-item"><span>Copper Pipe 1in</span><span class="badge badge-blue">On request</span></div>
-          </div>
-          <div class="card">
-            <div class="card-header"><span class="card-title">Recent purchase orders</span></div>
-            <table>
-              <thead><tr><th>PO #</th><th>Value</th><th>Delivered</th><th>Status</th></tr></thead>
-              <tbody>
-                <tr><td>PO-2041</td><td>$4,200</td><td>Jun 10</td><td><span class="badge badge-green">On time</span></td></tr>
-                <tr><td>PO-2018</td><td>$6,800</td><td>May 22</td><td><span class="badge badge-green">On time</span></td></tr>
-                <tr><td>PO-1994</td><td>$3,100</td><td>Apr 30</td><td><span class="badge badge-amber">1 day late</span></td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">Notes & history</span><button class="btn btn-primary" style="font-size:11px;padding:4px 10px;" onclick="addNote()"><i class="ti ti-plus"></i> Add note</button></div>
-          <div id="notes-list">
-            <div class="note-item"><div class="note-meta">📌 Pinned · Jun 2, 2026 · You</div><div class="note-text">Best contact for urgent orders is Mike Reilly (cell: 412-555-0291). He can expedite within 24hrs. Don't go through the main line for rush requests.</div></div>
-            <div class="note-item"><div class="note-meta">May 15, 2026 · You</div><div class="note-text">Negotiated 3% discount on orders over $5K starting Q3.</div></div>
-          </div>
-          <div class="note-input-row">
-            <input type="text" id="note-input" placeholder="Add a note about this vendor..." />
-            <button class="btn btn-primary" onclick="saveNote()">Save</button>
-          </div>
-        </div>
+        <div id="detail-content"></div>
       </div>
 
-      <div class="view" id="view-wire">
-        <button class="back-btn" onclick="showList()"><i class="ti ti-arrow-left"></i> Back to all vendors</button>
-        <div class="profile-header" style="border-left:3px solid #E24B4A;">
-          <div class="profile-left">
-            <div class="profile-avatar" style="background:#FCEBEB;color:#A32D2D;">WW</div>
-            <div><div class="profile-name">WireWorld <span class="badge badge-red" style="margin-left:8px;">⚠ Hound list</span></div><div class="profile-meta"><span><i class="ti ti-map-pin"></i> Detroit, MI</span><span><i class="ti ti-phone"></i> (313) 555-0291</span><span><i class="ti ti-mail"></i> procurement@wireworld.net</span></div></div>
-          </div>
-          <div style="display:flex;gap:8px;">
-            <a href="orders.html" class="btn" style="background:#FCEBEB;border-color:#F09595;color:#A32D2D;"><i class="ti ti-file-report"></i> Send open order report</a>
-            <button class="btn btn-primary"><i class="ti ti-plus"></i> New PO</button>
-          </div>
-        </div>
-        <div class="overall-score" style="background:#FFF5F5;">
-          <div class="overall-num" style="color:#E24B4A;">48</div>
-          <div style="flex:1;">
-            <div class="overall-label">Overall vendor score — <span class="badge badge-red">⚠ Hound list — needs constant follow-up</span></div>
-            <div class="score-breakdown">
-              <div class="score-row-detail"><span>On-time delivery</span><div class="mini-bar"><div class="mini-fill" style="width:61%;background:#E24B4A;"></div></div><span>61%</span></div>
-              <div class="score-row-detail"><span>Quality</span><div class="mini-bar"><div class="mini-fill" style="width:72%;background:#BA7517;"></div></div><span>72%</span></div>
-              <div class="score-row-detail"><span>Responsiveness</span><div class="mini-bar"><div class="mini-fill" style="width:40%;background:#E24B4A;"></div></div><span>40%</span></div>
-              <div class="score-row-detail"><span>Pricing accuracy</span><div class="mini-bar"><div class="mini-fill" style="width:58%;background:#E24B4A;"></div></div><span>58%</span></div>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">Notes</span></div>
-          <div class="note-item"><div class="note-meta">📌 Pinned · May 30 · You</div><div class="note-text">WireWorld has been unreliable all year. PO-2051 is 9 days late. Actively sourcing backup supplier. Do NOT rely solely on WireWorld for Copper Wire 2mm.</div></div>
-        </div>
-      </div>
-
-      <div class="view" id="view-fast">
-        <button class="back-btn" onclick="showList()"><i class="ti ti-arrow-left"></i> Back to all vendors</button>
-        <div class="profile-header">
-          <div class="profile-left">
-            <div class="profile-avatar" style="background:#FAEEDA;color:#854F0B;">FB</div>
-            <div><div class="profile-name">FastBearings Co.</div><div class="profile-meta"><span><i class="ti ti-map-pin"></i> Cleveland, OH</span><span><i class="ti ti-phone"></i> (216) 555-0847</span><span><i class="ti ti-mail"></i> orders@fastbearings.com</span></div></div>
-          </div>
-          <div style="display:flex;gap:8px;">
-            <a href="orders.html" class="btn"><i class="ti ti-file-report"></i> Send open order report</a>
-            <button class="btn btn-primary"><i class="ti ti-plus"></i> New PO</button>
-          </div>
-        </div>
-        <div class="overall-score">
-          <div class="overall-num" style="color:#BA7517;">71</div>
-          <div style="flex:1;">
-            <div class="overall-label">Overall vendor score — <span class="badge badge-amber">Monitor — keep an eye on</span></div>
-            <div class="score-breakdown">
-              <div class="score-row-detail"><span>On-time delivery</span><div class="mini-bar"><div class="mini-fill" style="width:78%;background:#BA7517;"></div></div><span>78%</span></div>
-              <div class="score-row-detail"><span>Quality</span><div class="mini-bar"><div class="mini-fill" style="width:85%;background:#1D9E75;"></div></div><span>85%</span></div>
-              <div class="score-row-detail"><span>Responsiveness</span><div class="mini-bar"><div class="mini-fill" style="width:70%;background:#BA7517;"></div></div><span>70%</span></div>
-              <div class="score-row-detail"><span>Pricing accuracy</span><div class="mini-bar"><div class="mini-fill" style="width:80%;background:#1D9E75;"></div></div><span>80%</span></div>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">Notes</span></div>
-          <div class="note-item"><div class="note-meta">Jun 1 · You</div><div class="note-text">Lead time creeping up from 6 to 9 days. New contact is Lisa (lisa@fastbearings.com).</div></div>
-        </div>
-      </div>
     </div>
   </div>
 </div>
+
 <script>
-function showDetail(vendor) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById('view-' + vendor).classList.add('active');
-  const names = { acme: 'Acme Metals', wire: 'WireWorld', fast: 'FastBearings Co.' };
-  document.getElementById('page-title').textContent = names[vendor] || 'Vendor profile';
-}
-function showList() {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById('view-list').classList.add('active');
-  document.getElementById('page-title').textContent = 'Vendor profiles';
-}
-function addNote() { document.getElementById('note-input').focus(); }
-function saveNote() {
-  const input = document.getElementById('note-input');
-  const text = input.value.trim();
-  if (!text) return;
-  const list = document.getElementById('notes-list');
-  const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  const div = document.createElement('div');
-  div.className = 'note-item';
-  div.innerHTML = `<div class="note-meta">${today} · You</div><div class="note-text">${text}</div>`;
-  list.insertBefore(div, list.firstChild);
-  input.value = '';
-}
+  const { createClient } = supabase;
+  const db = createClient(
+    'https://sxpmubxcmdpptqbknwzh.supabase.co',
+    'sb_publishable_b8pKBMLXtEzEPtUPGsZhlA_1sOdAcTc'
+  );
+
+  let allVendors = [];
+  let currentFilter = 'all';
+
+  const avatarColors = {
+    'trusted': { bg: '#E6F1FB', color: '#185FA5' },
+    'monitor': { bg: '#FAEEDA', color: '#854F0B' },
+    'hound': { bg: '#FCEBEB', color: '#A32D2D' }
+  };
+
+  function getInitials(name) {
+    return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  }
+
+  function getScoreColor(score) {
+    return score >= 85 ? '#1D9E75' : score >= 65 ? '#BA7517' : '#E24B4A';
+  }
+
+  function getScoreBarColor(score) {
+    return score >= 85 ? '#639922' : score >= 65 ? '#BA7517' : '#E24B4A';
+  }
+
+  function getScorePillClass(score) {
+    return score >= 85 ? 'score-high' : score >= 65 ? 'score-mid' : 'score-low';
+  }
+
+  function getStatusBadge(status) {
+    if (status === 'trusted') return '<span class="badge badge-green">✓ Trusted</span>';
+    if (status === 'hound') return '<span class="badge badge-red">⚠ Hound list</span>';
+    return '<span class="badge badge-amber">Monitor</span>';
+  }
+
+  function renderVendorCard(v) {
+    const colors = avatarColors[v.status] || avatarColors['monitor'];
+    return `
+      <div class="vendor-card" onclick="showDetail('${v.id}')">
+        <div class="vendor-card-top">
+          <div class="vendor-avatar" style="background:${colors.bg};color:${colors.color};">${getInitials(v.name)}</div>
+          <div><div class="vendor-name">${v.name}</div><div class="vendor-type">${v.type || 'Supplier'}</div></div>
+        </div>
+        <div class="score-row">
+          <span class="score-label">Overall score</span>
+          <span class="score-pill ${getScorePillClass(v.score)}">${v.score} / 100</span>
+        </div>
+        <div class="score-bar"><div class="score-fill" style="width:${v.score}%;background:${getScoreBarColor(v.score)};"></div></div>
+        <div class="vendor-tags">
+          ${getStatusBadge(v.status)}
+          <span class="tag">On-time ${v.on_time_percent}%</span>
+          ${v.location ? `<span class="tag">${v.location}</span>` : ''}
+        </div>
+      </div>`;
+  }
+
+  function renderVendorGrid(vendors) {
+    const grid = document.getElementById('vendor-grid');
+    if (vendors.length === 0) {
+      grid.innerHTML = '<div class="loading">No vendors found.</div>';
+      return;
+    }
+    grid.innerHTML = vendors.map(renderVendorCard).join('') +
+      `<div class="add-card" onclick="showAddForm()"><i class="ti ti-plus" style="font-size:22px;"></i> Add vendor</div>`;
+  }
+
+  async function loadVendors() {
+    const { data, error } = await db.from('vendors').select('*').order('score', { ascending: false });
+    if (error) { console.error(error); return; }
+    allVendors = data;
+    renderVendorGrid(data);
+  }
+
+  function filterVendors() {
+    const search = document.getElementById('search-input').value.toLowerCase();
+    let filtered = allVendors;
+    if (currentFilter !== 'all') filtered = filtered.filter(v => v.status === currentFilter);
+    if (search) filtered = filtered.filter(v => v.name.toLowerCase().includes(search) || (v.type || '').toLowerCase().includes(search));
+    renderVendorGrid(filtered);
+  }
+
+  function filterByStatus(el, status) {
+    currentFilter = status;
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    filterVendors();
+  }
+
+  async function showDetail(id) {
+    const vendor = allVendors.find(v => v.id === id);
+    if (!vendor) return;
+
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-detail').classList.add('active');
+    document.getElementById('page-title').textContent = vendor.name;
+
+    const colors = avatarColors[vendor.status] || avatarColors['monitor'];
+    const scoreColor = getScoreColor(vendor.score);
+    const barColor = getScoreBarColor(vendor.score);
+
+    document.getElementById('detail-content').innerHTML = `
+      <div class="profile-header">
+        <div class="profile-left">
+          <div class="profile-avatar" style="background:${colors.bg};color:${colors.color};">${getInitials(vendor.name)}</div>
+          <div>
+            <div class="profile-name">${vendor.name}</div>
+            <div class="profile-meta">
+              ${vendor.location ? `<span><i class="ti ti-map-pin"></i> ${vendor.location}</span>` : ''}
+              ${vendor.phone ? `<span><i class="ti ti-phone"></i> ${vendor.phone}</span>` : ''}
+              ${vendor.email ? `<span><i class="ti ti-mail"></i> ${vendor.email}</span>` : ''}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <a href="orders.html" class="btn"><i class="ti ti-file-report"></i> Send open order report</a>
+          <button class="btn btn-primary"><i class="ti ti-plus"></i> New PO</button>
+        </div>
+      </div>
+
+      <div class="overall-score" style="${vendor.status === 'hound' ? 'background:#FFF5F5;' : ''}">
+        <div class="overall-num" style="color:${scoreColor};">${vendor.score}</div>
+        <div style="flex:1;">
+          <div style="font-size:12px;color:#666;margin-bottom:8px;">Overall vendor score — ${getStatusBadge(vendor.status)}</div>
+          <div class="score-breakdown">
+            <div class="score-row-detail"><span>On-time delivery</span><div class="mini-bar"><div class="mini-fill" style="width:${vendor.on_time_percent}%;background:${barColor};"></div></div><span>${vendor.on_time_percent}%</span></div>
+            <div class="score-row-detail"><span>Overall score</span><div class="mini-bar"><div class="mini-fill" style="width:${vendor.score}%;background:${barColor};"></div></div><span>${vendor.score}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="score-cards">
+        <div class="score-card"><div class="score-card-label">Vendor score</div><div class="score-card-value" style="color:${scoreColor};">${vendor.score}</div><div class="score-card-sub">Out of 100</div></div>
+        <div class="score-card"><div class="score-card-label">On-time rate</div><div class="score-card-value">${vendor.on_time_percent}%</div><div class="score-card-sub">Delivery performance</div></div>
+        <div class="score-card"><div class="score-card-label">Status</div><div class="score-card-value" style="font-size:14px;margin-top:4px;">${vendor.status === 'trusted' ? '✓ Trusted' : vendor.status === 'hound' ? '⚠ Hound list' : '👁 Monitor'}</div><div class="score-card-sub">Current standing</div></div>
+        <div class="score-card"><div class="score-card-label">Type</div><div class="score-card-value" style="font-size:14px;margin-top:4px;">${vendor.type || '—'}</div><div class="score-card-sub">Supplier category</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Notes & history</span>
+          <button class="btn btn-primary" style="font-size:11px;padding:4px 10px;" onclick="focusNote()"><i class="ti ti-plus"></i> Add note</button>
+        </div>
+        <div id="notes-${vendor.id}">
+          <div class="note-item"><div class="note-meta">📌 Pinned</div><div class="note-text">Contact ${vendor.name} at ${vendor.email || 'email not set'} for orders and inquiries.</div></div>
+        </div>
+        <div class="note-input-row">
+          <input type="text" id="note-input-${vendor.id}" placeholder="Add a note about this vendor..." />
+          <button class="btn btn-primary" onclick="saveNote('${vendor.id}')">Save</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function focusNote() {
+    const inputs = document.querySelectorAll('[id^="note-input-"]');
+    if (inputs.length > 0) inputs[0].focus();
+  }
+
+  function saveNote(vendorId) {
+    const input = document.getElementById('note-input-' + vendorId);
+    const text = input.value.trim();
+    if (!text) return;
+    const list = document.getElementById('notes-' + vendorId);
+    const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const div = document.createElement('div');
+    div.className = 'note-item';
+    div.innerHTML = `<div class="note-meta">${today} · You</div><div class="note-text">${text}</div>`;
+    list.insertBefore(div, list.firstChild);
+    input.value = '';
+  }
+
+  function showList() {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-list').classList.add('active');
+    document.getElementById('page-title').textContent = 'Vendor profiles';
+  }
+
+  function showAddForm() {
+    alert('Add vendor form coming soon! For now, add vendors directly in Supabase table editor.');
+  }
+
+  loadVendors();
 </script>
 </body>
 </html>

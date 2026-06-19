@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FlowERP — Production</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -42,12 +43,9 @@
     .filter-row { display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; }
     .filter-tab { font-size: 11px; padding: 5px 12px; border-radius: 99px; border: 1px solid #ddd; background: transparent; color: #666; cursor: pointer; }
     .filter-tab.active { background: #378ADD; border-color: #378ADD; color: #fff; }
-    .card { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 10px; }
-    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-    .card-title { font-size: 13px; font-weight: 600; color: #111; }
     .run-card { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 1.1rem 1.25rem; margin-bottom: 10px; }
     .run-card.delayed { border-left: 3px solid #BA7517; }
-    .run-card.complete { border-left: 3px solid #1D9E75; opacity: 0.7; }
+    .run-card.complete { border-left: 3px solid #1D9E75; opacity: 0.8; }
     .run-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem; }
     .run-name { font-size: 14px; font-weight: 600; color: #111; }
     .run-id { font-size: 11px; color: #999; margin-top: 2px; }
@@ -57,13 +55,18 @@
     .progress-wrap { margin-bottom: 0.5rem; }
     .progress-label { display: flex; justify-content: space-between; font-size: 11px; color: #999; margin-bottom: 5px; }
     .progress { height: 8px; background: #f0f0f0; border-radius: 99px; overflow: hidden; }
-    .progress-fill { height: 100%; border-radius: 99px; transition: width 0.3s; }
+    .progress-fill { height: 100%; border-radius: 99px; }
     .run-actions { display: flex; gap: 8px; margin-top: 0.85rem; padding-top: 0.85rem; border-top: 1px solid #f0f0f0; }
+    .card { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 10px; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .card-title { font-size: 13px; font-weight: 600; color: #111; }
     table { width: 100%; border-collapse: collapse; font-size: 12px; }
     th { text-align: left; font-weight: 500; color: #999; padding: 6px 8px 8px; border-bottom: 1px solid #f0f0f0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; }
     td { padding: 8px 8px; border-bottom: 1px solid #f5f5f5; color: #333; }
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #fafafa; }
+    .ai-insight { display: flex; gap: 8px; padding: 8px 10px; background: #FAEEDA; border-radius: 8px; font-size: 12px; color: #854F0B; margin-bottom: 8px; }
+    .loading { text-align: center; padding: 2rem; color: #999; font-size: 13px; }
+    .empty-state { text-align: center; padding: 3rem; background: #fff; border-radius: 12px; border: 1px solid #eee; }
   </style>
 </head>
 <body>
@@ -80,7 +83,7 @@
     <a class="nav-item" href="atrisk.html"><i class="ti ti-alert-triangle"></i> At-risk parts</a>
     <a class="nav-item" href="vendors.html"><i class="ti ti-users"></i> Vendors</a>
     <div class="section-label">Account</div>
-    <a class="nav-item" href="#"><i class="ti ti-settings"></i> Settings</a>
+    <a class="nav-item" href="index.html"><i class="ti ti-settings"></i> Settings</a>
     <a class="nav-item" href="index.html"><i class="ti ti-logout"></i> Log out</a>
     <div class="sidebar-footer">
       <div class="avatar">ME</div>
@@ -100,26 +103,23 @@
     <div class="content">
 
       <div class="summary-cards">
-        <div class="summary-card"><div class="summary-card-label">Active runs</div><div class="summary-card-value">8</div><div class="summary-card-sub">3 due today</div></div>
-        <div class="summary-card"><div class="summary-card-label">Throughput</div><div class="summary-card-value" style="color:#1D9E75;">94%</div><div class="summary-card-sub">↑ 2% vs target</div></div>
-        <div class="summary-card"><div class="summary-card-label">Defect rate</div><div class="summary-card-value" style="color:#BA7517;">1.3%</div><div class="summary-card-sub">↑ 0.2% vs last week</div></div>
-        <div class="summary-card"><div class="summary-card-label">Units today</div><div class="summary-card-value">312</div><div class="summary-card-sub" style="color:#BA7517;">Target: 350</div></div>
+        <div class="summary-card"><div class="summary-card-label">Parts tracked</div><div class="summary-card-value" id="parts-count">—</div><div class="summary-card-sub">In inventory</div></div>
+        <div class="summary-card"><div class="summary-card-label">Critical parts</div><div class="summary-card-value" id="critical-count" style="color:#E24B4A;">—</div><div class="summary-card-sub">Need reorder</div></div>
+        <div class="summary-card"><div class="summary-card-label">Vendors</div><div class="summary-card-value" id="vendor-count">—</div><div class="summary-card-sub">Active suppliers</div></div>
+        <div class="summary-card"><div class="summary-card-label">Open POs</div><div class="summary-card-value" id="po-count">—</div><div class="summary-card-sub">In procurement</div></div>
       </div>
 
       <div class="filter-row">
-        <button class="filter-tab active" onclick="setTab(this)">All runs (8)</button>
-        <button class="filter-tab" onclick="setTab(this)">🟢 On track (5)</button>
-        <button class="filter-tab" onclick="setTab(this)">🟡 Delayed (2)</button>
-        <button class="filter-tab" onclick="setTab(this)">✅ Complete (1)</button>
+        <button class="filter-tab active" onclick="setTab(this)">Active runs (4)</button>
+        <button class="filter-tab" onclick="setTab(this)">On track (2)</button>
+        <button class="filter-tab" onclick="setTab(this)">Delayed (1)</button>
+        <button class="filter-tab" onclick="setTab(this)">Complete (1)</button>
       </div>
 
-      <!-- RUN 1 -->
+      <!-- Static production runs — these will be database-driven in a future update -->
       <div class="run-card">
         <div class="run-top">
-          <div>
-            <div class="run-name">Motor Unit A2</div>
-            <div class="run-id">RUN-441 · Line 1 · Started Jun 13</div>
-          </div>
+          <div><div class="run-name">Motor Unit A2</div><div class="run-id">RUN-441 · Line 1 · Started Jun 13</div></div>
           <span class="badge badge-green">On track</span>
         </div>
         <div class="run-stats">
@@ -133,20 +133,15 @@
           <div class="progress"><div class="progress-fill" style="width:82%;background:#1D9E75;"></div></div>
         </div>
         <div class="run-actions">
-          <button class="btn btn-primary"><i class="ti ti-edit"></i> Update progress</button>
+          <button class="btn btn-primary" onclick="alert('Progress update coming in next version!')"><i class="ti ti-edit"></i> Update progress</button>
           <a href="bom.html" class="btn"><i class="ti ti-list-details"></i> View BOM</a>
-          <button class="btn"><i class="ti ti-alert-triangle"></i> Flag issue</button>
-          <button class="btn" style="margin-left:auto;"><i class="ti ti-circle-check"></i> Mark complete</button>
+          <a href="runout.html" class="btn"><i class="ti ti-box"></i> Check inventory</a>
         </div>
       </div>
 
-      <!-- RUN 2 -->
       <div class="run-card delayed">
         <div class="run-top">
-          <div>
-            <div class="run-name">Pump Assembly P1</div>
-            <div class="run-id">RUN-442 · Line 2 · Started Jun 12</div>
-          </div>
+          <div><div class="run-name">Pump Assembly P1</div><div class="run-id">RUN-442 · Line 2 · Started Jun 12</div></div>
           <span class="badge badge-amber">Delayed</span>
         </div>
         <div class="run-stats">
@@ -155,25 +150,21 @@
           <div><div class="run-stat-label">Defect rate</div><div class="run-stat-value" style="color:#BA7517;">2.1%</div></div>
           <div><div class="run-stat-label">Operator</div><div class="run-stat-value">R. Santos</div></div>
         </div>
+        <div class="ai-insight"><i class="ti ti-alert-triangle"></i> Delay: Machine 2B offline for maintenance since 10am. Expected back online at 3pm.</div>
         <div class="progress-wrap">
           <div class="progress-label"><span>Progress</span><span>45%</span></div>
           <div class="progress"><div class="progress-fill" style="width:45%;background:#BA7517;"></div></div>
         </div>
-        <div style="background:#FAEEDA;border-radius:8px;padding:8px 10px;font-size:12px;color:#854F0B;margin-bottom:0.5rem;"><i class="ti ti-alert-triangle"></i> Delay reason: Machine 2B offline for maintenance since 10am. Expected back online at 3pm.</div>
         <div class="run-actions">
-          <button class="btn btn-primary"><i class="ti ti-edit"></i> Update progress</button>
+          <button class="btn btn-primary" onclick="alert('Progress update coming in next version!')"><i class="ti ti-edit"></i> Update progress</button>
           <a href="bom.html" class="btn"><i class="ti ti-list-details"></i> View BOM</a>
-          <button class="btn"><i class="ti ti-alert-triangle"></i> Flag issue</button>
+          <a href="runout.html" class="btn"><i class="ti ti-box"></i> Check inventory</a>
         </div>
       </div>
 
-      <!-- RUN 3 -->
       <div class="run-card">
         <div class="run-top">
-          <div>
-            <div class="run-name">Gear Box G3</div>
-            <div class="run-id">RUN-443 · Line 3 · Started Jun 13</div>
-          </div>
+          <div><div class="run-name">Gear Box G3</div><div class="run-id">RUN-443 · Line 3 · Started Jun 13</div></div>
           <span class="badge badge-blue">Started</span>
         </div>
         <div class="run-stats">
@@ -187,26 +178,15 @@
           <div class="progress"><div class="progress-fill" style="width:10%;background:#378ADD;"></div></div>
         </div>
         <div class="run-actions">
-          <button class="btn btn-primary"><i class="ti ti-edit"></i> Update progress</button>
+          <button class="btn btn-primary" onclick="alert('Progress update coming in next version!')"><i class="ti ti-edit"></i> Update progress</button>
           <a href="bom.html" class="btn"><i class="ti ti-list-details"></i> View BOM</a>
-          <button class="btn"><i class="ti ti-alert-triangle"></i> Flag issue</button>
         </div>
       </div>
 
-      <!-- RUN 4 — COMPLETE -->
       <div class="run-card complete">
         <div class="run-top">
-          <div>
-            <div class="run-name">Valve Assembly V2</div>
-            <div class="run-id">RUN-440 · Line 1 · Completed Jun 13</div>
-          </div>
+          <div><div class="run-name">Valve Assembly V2</div><div class="run-id">RUN-440 · Completed Jun 13</div></div>
           <span class="badge badge-green">✓ Complete</span>
-        </div>
-        <div class="run-stats">
-          <div><div class="run-stat-label">Units produced</div><div class="run-stat-value">60 / 60</div></div>
-          <div><div class="run-stat-label">Completed</div><div class="run-stat-value">Today 9:42am</div></div>
-          <div><div class="run-stat-label">Defect rate</div><div class="run-stat-value" style="color:#1D9E75;">0.5%</div></div>
-          <div><div class="run-stat-label">Operator</div><div class="run-stat-value">J. Wilson</div></div>
         </div>
         <div class="progress-wrap">
           <div class="progress-label"><span>Progress</span><span>100%</span></div>
@@ -214,31 +194,69 @@
         </div>
       </div>
 
-      <!-- SCHEDULE TABLE -->
-      <div class="card" style="margin-top:1rem;">
+      <div class="card">
         <div class="card-header">
-          <span class="card-title">Upcoming scheduled runs</span>
-          <a href="bom.html" class="btn btn-primary" style="font-size:11px;padding:4px 10px;"><i class="ti ti-plus"></i> Schedule run</a>
+          <span class="card-title">Live inventory status — from database</span>
+          <a href="runout.html" class="btn" style="font-size:11px;padding:4px 10px;">Full runout report →</a>
         </div>
         <table>
-          <thead><tr><th>Product</th><th>Qty</th><th>Start date</th><th>Line</th><th>Status</th></tr></thead>
-          <tbody>
-            <tr><td>Motor Unit A2</td><td>200 units</td><td>Jun 16</td><td>Line 1</td><td><span class="badge badge-blue">Scheduled</span></td></tr>
-            <tr><td>Pump Assembly P1</td><td>100 units</td><td>Jun 17</td><td>Line 2</td><td><span class="badge badge-blue">Scheduled</span></td></tr>
-            <tr><td>Valve Assembly V2</td><td>80 units</td><td>Jun 18</td><td>Line 1</td><td><span class="badge badge-amber">Parts pending</span></td></tr>
-            <tr><td>Gear Box G3</td><td>60 units</td><td>Jun 20</td><td>Line 3</td><td><span class="badge badge-blue">Scheduled</span></td></tr>
-          </tbody>
+          <thead><tr><th>Part</th><th>On hand</th><th>Daily usage</th><th>Days left</th><th>Status</th></tr></thead>
+          <tbody id="inventory-tbody"><tr><td colspan="5" class="loading">Loading from database...</td></tr></tbody>
         </table>
       </div>
 
     </div>
   </div>
 </div>
+
 <script>
-function setTab(el) {
-  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-}
+  const { createClient } = supabase;
+  const db = createClient(
+    'https://sxpmubxcmdpptqbknwzh.supabase.co',
+    'sb_publishable_b8pKBMLXtEzEPtUPGsZhlA_1sOdAcTc'
+  );
+
+  function setTab(el) {
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  async function loadData() {
+    const [partsRes, vendorsRes, posRes] = await Promise.all([
+      db.from('parts').select('*').order('qty_on_hand', { ascending: true }),
+      db.from('vendors').select('*'),
+      db.from('purchase_orders').select('*')
+    ]);
+
+    if (partsRes.error || vendorsRes.error || posRes.error) return;
+
+    const parts = partsRes.data;
+    const vendors = vendorsRes.data;
+    const pos = posRes.data;
+
+    const critical = parts.filter(p => p.daily_usage > 0 && Math.floor(p.qty_on_hand / p.daily_usage) <= 7);
+
+    document.getElementById('parts-count').textContent = parts.length;
+    document.getElementById('critical-count').textContent = critical.length;
+    document.getElementById('vendor-count').textContent = vendors.length;
+    document.getElementById('po-count').textContent = pos.length;
+
+    // Render inventory table
+    document.getElementById('inventory-tbody').innerHTML = parts.map(p => {
+      const days = p.daily_usage > 0 ? Math.floor(p.qty_on_hand / p.daily_usage) : 999;
+      const badgeClass = days <= 7 ? 'badge-red' : days <= 20 ? 'badge-amber' : 'badge-green';
+      const daysText = days === 999 ? '—' : days + ' days';
+      return `<tr>
+        <td><strong>${p.name}</strong></td>
+        <td>${p.qty_on_hand} units</td>
+        <td>~${p.daily_usage}/day</td>
+        <td><span class="badge ${badgeClass}">${daysText}</span></td>
+        <td>${p.location || '—'}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  loadData();
 </script>
 </body>
 </html>

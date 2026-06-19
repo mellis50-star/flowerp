@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FlowERP — Open Order Report</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -48,9 +49,6 @@
     .summary-card-sub { font-size: 11px; color: #999; margin-top: 2px; }
     .filter-row { display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; }
     .filter-row select { font-size: 12px; padding: 6px 10px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; }
-    .filter-row input { font-size: 12px; padding: 6px 10px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; width: 180px; }
-    .filter-tab { font-size: 11px; padding: 4px 10px; border-radius: 99px; border: 1px solid #ddd; background: transparent; color: #666; cursor: pointer; }
-    .filter-tab.active { background: #378ADD; border-color: #378ADD; color: #fff; }
     .vendor-section { margin-bottom: 10px; }
     .vendor-header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: #fff; border: 1px solid #eee; border-radius: 10px; margin-bottom: 6px; cursor: pointer; }
     .vendor-header:hover { background: #fafafa; }
@@ -61,7 +59,7 @@
     .vendor-header-meta { font-size: 11px; color: #999; }
     .vendor-header-right { display: flex; align-items: center; gap: 8px; }
     .orders-table { width: 100%; border-collapse: collapse; font-size: 12px; background: #fff; border: 1px solid #eee; border-radius: 10px; overflow: hidden; margin-bottom: 6px; }
-    .orders-table th { text-align: left; font-weight: 500; color: #999; padding: 7px 10px; border-bottom: 1px solid #f0f0f0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; background: #fafafa; }
+    .orders-table th { text-align: left; font-weight: 500; color: #999; padding: 7px 10px; border-bottom: 1px solid #f0f0f0; font-size: 11px; text-transform: uppercase; background: #fafafa; }
     .orders-table td { padding: 9px 10px; border-bottom: 1px solid #f5f5f5; color: #333; vertical-align: middle; }
     .orders-table tr:last-child td { border-bottom: none; }
     .confirm-btns { display: flex; gap: 5px; align-items: center; }
@@ -73,11 +71,12 @@
     .send-row { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 6px 0 10px; }
     .ai-insight { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; background: #f0f7ff; border-radius: 8px; margin-bottom: 6px; font-size: 12px; color: #185FA5; }
     .ai-insight.warning { background: #FFF5F5; color: #A32D2D; }
-    .date-input { font-size: 11px; padding: 3px 6px; border-radius: 6px; border: 1px solid #ddd; background: #f9f9f9; color: #111; width: 100px; }
-    .spinner { display: none; }
-    .spinner.active { display: flex; align-items: center; gap: 10px; padding: 2rem; justify-content: center; background: #fff; border: 1px solid #eee; border-radius: 10px; margin-bottom: 1rem; }
-    .spin { width: 20px; height: 20px; border: 2px solid #eee; border-top-color: #378ADD; border-radius: 50%; animation: spin 0.8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .new-po-form { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+    .new-po-form h3 { font-size: 14px; font-weight: 600; color: #111; margin-bottom: 1rem; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+    .form-group label { font-size: 11px; color: #999; display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .form-group select, .form-group input { width: 100%; font-size: 13px; padding: 8px 10px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; }
+    .loading { text-align: center; padding: 2rem; color: #999; font-size: 13px; }
   </style>
 </head>
 <body>
@@ -106,152 +105,262 @@
     <div class="topbar">
       <span class="topbar-title">Open order report</span>
       <div style="display:flex;gap:8px;">
-        <button class="btn"><i class="ti ti-download"></i> Export all</button>
+        <button class="btn" onclick="toggleNewPO()"><i class="ti ti-plus"></i> New PO</button>
         <button class="btn btn-green" onclick="sendAll()"><i class="ti ti-send"></i> Send all vendors</button>
       </div>
     </div>
 
     <div class="content">
-      <div class="ai-banner">
-        <div><h3><i class="ti ti-sparkles"></i> AI open order report — generated in 4 seconds</h3><p>Compiled 47 open orders across 15 vendors · Last updated today at 8:14 AM · Previously took ~8 hours manually</p></div>
+
+      <!-- NEW PO FORM -->
+      <div class="new-po-form" id="new-po-form" style="display:none;">
+        <h3><i class="ti ti-plus"></i> Create new purchase order</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Vendor</label>
+            <select id="po-vendor"></select>
+          </div>
+          <div class="form-group">
+            <label>Part</label>
+            <select id="po-part"></select>
+          </div>
+          <div class="form-group">
+            <label>Quantity</label>
+            <input type="number" id="po-qty" placeholder="e.g. 500" min="1" />
+          </div>
+          <div class="form-group">
+            <label>PO Number</label>
+            <input type="text" id="po-number" placeholder="e.g. PO-2050" />
+          </div>
+          <div class="form-group">
+            <label>Due Date</label>
+            <input type="date" id="po-date" />
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select id="po-status">
+              <option value="ordered">Ordered</option>
+              <option value="in_transit">In Transit</option>
+              <option value="received">Received</option>
+            </select>
+          </div>
+        </div>
         <div style="display:flex;gap:8px;">
-          <button class="ai-btn ai-btn-ghost" onclick="regenerate()"><i class="ti ti-refresh"></i> Regenerate</button>
-          <button class="ai-btn ai-btn-white"><i class="ti ti-info-circle"></i> How does this work?</button>
+          <button class="btn btn-primary" onclick="createPO()"><i class="ti ti-check"></i> Create PO</button>
+          <button class="btn" onclick="toggleNewPO()">Cancel</button>
+        </div>
+      </div>
+
+      <div class="ai-banner">
+        <div>
+          <h3><i class="ti ti-sparkles"></i> AI open order report — live from database</h3>
+          <p id="ai-banner-sub">Loading orders...</p>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="ai-btn ai-btn-ghost" onclick="loadOrders()"><i class="ti ti-refresh"></i> Refresh</button>
         </div>
       </div>
 
       <div class="summary-cards">
-        <div class="summary-card"><div class="summary-card-label">Total open orders</div><div class="summary-card-value">47</div><div class="summary-card-sub">Across 15 vendors</div></div>
-        <div class="summary-card"><div class="summary-card-label">On time</div><div class="summary-card-value" style="color:#1D9E75;">31</div><div class="summary-card-sub">66% of orders</div></div>
-        <div class="summary-card"><div class="summary-card-label">At risk</div><div class="summary-card-value" style="color:#BA7517;">11</div><div class="summary-card-sub">Need follow-up</div></div>
-        <div class="summary-card"><div class="summary-card-label">Late / critical</div><div class="summary-card-value" style="color:#E24B4A;">5</div><div class="summary-card-sub">Action required</div></div>
+        <div class="summary-card"><div class="summary-card-label">Total POs</div><div class="summary-card-value" id="total-pos">—</div><div class="summary-card-sub" id="pos-sub">Loading...</div></div>
+        <div class="summary-card"><div class="summary-card-label">On time</div><div class="summary-card-value" id="on-time-count" style="color:#1D9E75;">—</div><div class="summary-card-sub">Confirmed</div></div>
+        <div class="summary-card"><div class="summary-card-label">In transit</div><div class="summary-card-value" id="transit-count" style="color:#BA7517;">—</div><div class="summary-card-sub">On the way</div></div>
+        <div class="summary-card"><div class="summary-card-label">Ordered</div><div class="summary-card-value" id="ordered-count" style="color:#378ADD;">—</div><div class="summary-card-sub">Awaiting shipment</div></div>
       </div>
 
-      <div class="filter-row">
-        <select><option>All vendors (15)</option><option>Acme Metals</option><option>FastBearings Co.</option><option>WireWorld</option></select>
-        <select><option>All statuses</option><option>On time</option><option>At risk</option><option>Late</option></select>
-        <input type="text" placeholder="Search PO # or part..." />
-        <div style="margin-left:auto;display:flex;gap:6px;">
-          <button class="filter-tab active">All (47)</button>
-          <button class="filter-tab">Needs action (16)</button>
-          <button class="filter-tab">Sent (31)</button>
-        </div>
-      </div>
+      <div id="orders-list"><div class="loading">Loading purchase orders from database...</div></div>
 
-      <div class="spinner" id="spinner"><div class="spin"></div><div><div style="font-size:13px;font-weight:600;color:#111;">Generating report...</div><div style="font-size:12px;color:#999;margin-top:2px;">Compiling 47 orders across 15 vendors</div></div></div>
-
-      <div id="report-content">
-        <div class="vendor-section">
-          <div class="vendor-header" onclick="toggleVendor('acme')">
-            <div class="vendor-header-left">
-              <div class="vendor-avatar-sm" style="background:#E6F1FB;color:#185FA5;">AM</div>
-              <div><div class="vendor-header-name">Acme Metals <span class="badge badge-green" style="margin-left:6px;">Score 94</span></div><div class="vendor-header-meta">4 open orders · $14,200 total</div></div>
-            </div>
-            <div class="vendor-header-right">
-              <span class="badge badge-green">3 on time</span><span class="badge badge-amber">1 at risk</span>
-              <button class="btn btn-primary" style="font-size:11px;padding:4px 10px;" onclick="event.stopPropagation();sendVendor('Acme Metals')"><i class="ti ti-send"></i> Send report</button>
-              <i class="ti ti-chevron-down" id="acme-chevron" style="color:#999;font-size:14px;transition:transform 0.2s;"></i>
-            </div>
-          </div>
-          <div id="acme-orders" style="display:none;">
-            <div class="ai-insight"><i class="ti ti-sparkles"></i> AI note: Acme Metals performing well. PO-2044 flagged at risk based on avg lead time of 6 days.</div>
-            <table class="orders-table">
-              <thead><tr><th>PO #</th><th>Part</th><th>Qty</th><th>Due date</th><th>Status</th><th>Vendor response</th></tr></thead>
-              <tbody>
-                <tr><td>PO-2041</td><td>Steel Rod 12mm</td><td>500 units</td><td><input type="date" class="date-input" value="2026-06-20" /></td><td><span class="badge badge-green">On time</span></td><td><div class="confirm-btns"><button class="c-btn confirmed">✅</button><button class="c-btn" onclick="setResponse(this,'rejected')">❌</button><button class="c-btn" onclick="setResponse(this,'counter')">🟡</button></div></td></tr>
-                <tr><td>PO-2042</td><td>Steel Rod 8mm</td><td>200 units</td><td><input type="date" class="date-input" value="2026-06-24" /></td><td><span class="badge badge-green">On time</span></td><td><div class="confirm-btns"><button class="c-btn confirmed">✅</button><button class="c-btn" onclick="setResponse(this,'rejected')">❌</button><button class="c-btn" onclick="setResponse(this,'counter')">🟡</button></div></td></tr>
-                <tr style="background:#FFFBF2;"><td>PO-2044</td><td>Stainless Plate 6mm</td><td>80 units</td><td><input type="date" class="date-input" value="2026-07-01" /></td><td><span class="badge badge-amber">At risk</span></td><td><div class="confirm-btns"><button class="c-btn" onclick="setResponse(this,'confirmed')">✅</button><button class="c-btn" onclick="setResponse(this,'rejected')">❌</button><button class="c-btn" onclick="setResponse(this,'counter')">🟡</button><span style="font-size:10px;color:#999;">Awaiting</span></div></td></tr>
-              </tbody>
-            </table>
-            <div class="send-row"><span style="font-size:11px;color:#999;">Vendor receives a link — no login required</span><button class="btn btn-primary" style="font-size:11px;" onclick="sendVendor('Acme Metals')"><i class="ti ti-send"></i> Send to Acme Metals</button></div>
-          </div>
-        </div>
-
-        <div class="vendor-section">
-          <div class="vendor-header critical" onclick="toggleVendor('wire')">
-            <div class="vendor-header-left">
-              <div class="vendor-avatar-sm" style="background:#FCEBEB;color:#A32D2D;">WW</div>
-              <div><div class="vendor-header-name">WireWorld <span class="badge badge-red" style="margin-left:6px;">Score 48 ⚠ Hound list</span></div><div class="vendor-header-meta">5 open orders · $18,600 total</div></div>
-            </div>
-            <div class="vendor-header-right">
-              <span class="badge badge-red">3 late</span><span class="badge badge-amber">2 at risk</span>
-              <button class="btn" style="font-size:11px;padding:4px 10px;background:#FCEBEB;border-color:#F09595;color:#A32D2D;" onclick="event.stopPropagation();sendVendor('WireWorld')"><i class="ti ti-send"></i> Send report</button>
-              <i class="ti ti-chevron-down" id="wire-chevron" style="color:#999;font-size:14px;transition:transform 0.2s;"></i>
-            </div>
-          </div>
-          <div id="wire-orders" style="display:none;">
-            <div class="ai-insight warning"><i class="ti ti-alert-triangle"></i> AI alert: WireWorld has 3 late orders this month. Recommend calling directly. Consider backup supplier for Copper Wire 2mm.</div>
-            <table class="orders-table">
-              <thead><tr><th>PO #</th><th>Part</th><th>Qty</th><th>Due date</th><th>Status</th><th>Vendor response</th></tr></thead>
-              <tbody>
-                <tr style="background:#FFF5F5;"><td>PO-2051</td><td>Copper Wire 2mm</td><td>1000m</td><td><input type="date" class="date-input" value="2026-06-04" /></td><td><span class="badge badge-red">9 days late</span></td><td><div class="confirm-btns"><button class="c-btn rejected">❌</button><button class="c-btn" onclick="setResponse(this,'confirmed')">✅</button><button class="c-btn" onclick="setResponse(this,'counter')">🟡</button><span style="font-size:10px;color:#A32D2D;">Rejected</span></div></td></tr>
-                <tr style="background:#FFF5F5;"><td>PO-2052</td><td>Copper Wire 4mm</td><td>500m</td><td><input type="date" class="date-input" value="2026-06-06" /></td><td><span class="badge badge-red">7 days late</span></td><td><div class="confirm-btns"><button class="c-btn" onclick="setResponse(this,'confirmed')">✅</button><button class="c-btn" onclick="setResponse(this,'rejected')">❌</button><button class="c-btn counter">🟡</button><span style="font-size:10px;color:#854F0B;">Counter: Jun 18</span></div></td></tr>
-              </tbody>
-            </table>
-            <div class="send-row"><span style="font-size:11px;color:#999;">Vendor receives a link — no login required</span><button class="btn btn-primary" style="font-size:11px;" onclick="sendVendor('WireWorld')"><i class="ti ti-send"></i> Send to WireWorld</button></div>
-          </div>
-        </div>
-
-        <div class="vendor-section">
-          <div class="vendor-header" onclick="toggleVendor('fast')">
-            <div class="vendor-header-left">
-              <div class="vendor-avatar-sm" style="background:#FAEEDA;color:#854F0B;">FB</div>
-              <div><div class="vendor-header-name">FastBearings Co. <span class="badge badge-amber" style="margin-left:6px;">Score 71</span></div><div class="vendor-header-meta">3 open orders · $8,400 total</div></div>
-            </div>
-            <div class="vendor-header-right">
-              <span class="badge badge-green">1 on time</span><span class="badge badge-amber">2 at risk</span>
-              <button class="btn btn-primary" style="font-size:11px;padding:4px 10px;" onclick="event.stopPropagation();sendVendor('FastBearings Co.')"><i class="ti ti-send"></i> Send report</button>
-              <i class="ti ti-chevron-down" id="fast-chevron" style="color:#999;font-size:14px;transition:transform 0.2s;"></i>
-            </div>
-          </div>
-          <div id="fast-orders" style="display:none;">
-            <div class="ai-insight"><i class="ti ti-sparkles"></i> AI note: 2 orders approaching risk window based on FastBearings avg lead time of 9 days.</div>
-            <table class="orders-table">
-              <thead><tr><th>PO #</th><th>Part</th><th>Qty</th><th>Due date</th><th>Status</th><th>Vendor response</th></tr></thead>
-              <tbody>
-                <tr><td>PO-2061</td><td>Bearing 6205-ZZ</td><td>300 units</td><td><input type="date" class="date-input" value="2026-06-25" /></td><td><span class="badge badge-green">On time</span></td><td><div class="confirm-btns"><button class="c-btn confirmed">✅</button><button class="c-btn" onclick="setResponse(this,'rejected')">❌</button><button class="c-btn" onclick="setResponse(this,'counter')">🟡</button></div></td></tr>
-                <tr style="background:#FFFBF2;"><td>PO-2062</td><td>Bearing 6305-ZZ</td><td>150 units</td><td><input type="date" class="date-input" value="2026-06-27" /></td><td><span class="badge badge-amber">At risk</span></td><td><div class="confirm-btns"><button class="c-btn" onclick="setResponse(this,'confirmed')">✅</button><button class="c-btn" onclick="setResponse(this,'rejected')">❌</button><button class="c-btn" onclick="setResponse(this,'counter')">🟡</button><span style="font-size:10px;color:#999;">Awaiting</span></div></td></tr>
-              </tbody>
-            </table>
-            <div class="send-row"><span style="font-size:11px;color:#999;">Vendor receives a link — no login required</span><button class="btn btn-primary" style="font-size:11px;" onclick="sendVendor('FastBearings Co.')"><i class="ti ti-send"></i> Send to FastBearings Co.</button></div>
-          </div>
-        </div>
-
-        <div style="text-align:center;padding:1rem;font-size:12px;color:#999;">Showing 3 of 15 vendors · <span style="color:#378ADD;cursor:pointer;">Load all vendors</span></div>
-      </div>
     </div>
   </div>
 </div>
+
 <script>
-function toggleVendor(id) {
-  const orders = document.getElementById(id + '-orders');
-  const chevron = document.getElementById(id + '-chevron');
-  const open = orders.style.display === 'block';
-  orders.style.display = open ? 'none' : 'block';
-  chevron.style.transform = open ? '' : 'rotate(180deg)';
-}
-function setResponse(btn, type) {
-  const btns = btn.closest('.confirm-btns').querySelectorAll('.c-btn');
-  btns.forEach(b => b.className = 'c-btn');
-  btn.classList.add(type);
-  const existing = btn.closest('.confirm-btns').querySelector('span');
-  if (existing) existing.remove();
-  const label = document.createElement('span');
-  label.style.fontSize = '10px';
-  if (type === 'confirmed') { label.style.color = '#3B6D11'; label.textContent = 'Confirmed'; }
-  if (type === 'rejected') { label.style.color = '#A32D2D'; label.textContent = 'Rejected'; }
-  if (type === 'counter') { label.style.color = '#854F0B'; label.textContent = 'Counter offer'; }
-  btn.closest('.confirm-btns').appendChild(label);
-}
-function sendVendor(name) { alert('Report sent to ' + name + '!\n\nThey will receive a secure email link to confirm, reject, or counter each order line.'); }
-function sendAll() { alert('Open order reports sent to all 15 vendors!'); }
-function regenerate() {
-  const spinner = document.getElementById('spinner');
-  const content = document.getElementById('report-content');
-  spinner.classList.add('active');
-  content.style.display = 'none';
-  setTimeout(() => { spinner.classList.remove('active'); content.style.display = 'block'; }, 2500);
-}
+  const { createClient } = supabase;
+  const db = createClient(
+    'https://sxpmubxcmdpptqbknwzh.supabase.co',
+    'sb_publishable_b8pKBMLXtEzEPtUPGsZhlA_1sOdAcTc'
+  );
+
+  let allOrders = [];
+  let allVendors = [];
+  let allParts = [];
+
+  function getInitials(name) {
+    return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  }
+
+  function getStatusBadge(status) {
+    if (status === 'received') return '<span class="badge badge-green">Received</span>';
+    if (status === 'in_transit') return '<span class="badge badge-amber">In Transit</span>';
+    if (status === 'ordered') return '<span class="badge badge-blue">Ordered</span>';
+    if (status === 'late') return '<span class="badge badge-red">Late</span>';
+    return '<span class="badge badge-blue">' + status + '</span>';
+  }
+
+  async function loadOrders() {
+    const [vendorsRes, partsRes, ordersRes] = await Promise.all([
+      db.from('vendors').select('*').order('score', { ascending: false }),
+      db.from('parts').select('*'),
+      db.from('purchase_orders').select('*, vendors(name, score, status, email), parts(name, sku)')
+    ]);
+
+    if (vendorsRes.error || partsRes.error || ordersRes.error) {
+      console.error('Error loading data');
+      return;
+    }
+
+    allVendors = vendorsRes.data;
+    allParts = partsRes.data;
+    allOrders = ordersRes.data;
+
+    // Populate form dropdowns
+    document.getElementById('po-vendor').innerHTML = allVendors.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
+    document.getElementById('po-part').innerHTML = allParts.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+    // Update summary cards
+    document.getElementById('total-pos').textContent = allOrders.length;
+    document.getElementById('pos-sub').textContent = 'Across ' + allVendors.length + ' vendors';
+    document.getElementById('on-time-count').textContent = allOrders.filter(o => o.status === 'received').length;
+    document.getElementById('transit-count').textContent = allOrders.filter(o => o.status === 'in_transit').length;
+    document.getElementById('ordered-count').textContent = allOrders.filter(o => o.status === 'ordered').length;
+
+    document.getElementById('ai-banner-sub').textContent = `${allOrders.length} purchase orders across ${allVendors.length} vendors · Live from database`;
+
+    if (allOrders.length === 0) {
+      document.getElementById('orders-list').innerHTML = `
+        <div style="text-align:center;padding:3rem;background:#fff;border-radius:12px;border:1px solid #eee;">
+          <div style="font-size:32px;margin-bottom:1rem;">📋</div>
+          <div style="font-size:15px;font-weight:600;color:#111;margin-bottom:0.5rem;">No purchase orders yet</div>
+          <div style="font-size:13px;color:#999;margin-bottom:1.5rem;">Create your first PO to get started</div>
+          <button class="btn btn-primary" onclick="toggleNewPO()"><i class="ti ti-plus"></i> Create first PO</button>
+        </div>`;
+      return;
+    }
+
+    // Group orders by vendor
+    const byVendor = {};
+    allOrders.forEach(o => {
+      const vName = o.vendors?.name || 'Unknown vendor';
+      if (!byVendor[vName]) byVendor[vName] = { vendor: o.vendors, orders: [] };
+      byVendor[vName].orders.push(o);
+    });
+
+    document.getElementById('orders-list').innerHTML = Object.entries(byVendor).map(([vName, { vendor, orders }]) => {
+      const isHound = vendor?.status === 'hound';
+      const colors = isHound ? { bg: '#FCEBEB', color: '#A32D2D' } : { bg: '#E6F1FB', color: '#185FA5' };
+      const received = orders.filter(o => o.status === 'received').length;
+      const late = orders.filter(o => o.status === 'late').length;
+
+      return `
+        <div class="vendor-section">
+          <div class="vendor-header ${isHound ? 'critical' : ''}" onclick="toggleVendor('${vName.replace(/\s/g, '_')}')">
+            <div class="vendor-header-left">
+              <div class="vendor-avatar-sm" style="background:${colors.bg};color:${colors.color};">${getInitials(vName)}</div>
+              <div>
+                <div class="vendor-header-name">${vName} ${vendor ? '<span class="badge ' + (vendor.score >= 85 ? 'badge-green' : vendor.score >= 65 ? 'badge-amber' : 'badge-red') + '" style="margin-left:6px;">Score ' + vendor.score + '</span>' : ''} ${isHound ? '<span class="badge badge-red">⚠ Hound list</span>' : ''}</div>
+                <div class="vendor-header-meta">${orders.length} orders${vendor?.email ? ' · ' + vendor.email : ''}</div>
+              </div>
+            </div>
+            <div class="vendor-header-right">
+              ${received > 0 ? `<span class="badge badge-green">${received} received</span>` : ''}
+              ${late > 0 ? `<span class="badge badge-red">${late} late</span>` : ''}
+              <button class="btn btn-primary" style="font-size:11px;padding:4px 10px;" onclick="event.stopPropagation();sendVendor('${vName}')"><i class="ti ti-send"></i> Send report</button>
+              <i class="ti ti-chevron-down" id="chevron-${vName.replace(/\s/g, '_')}" style="color:#999;font-size:14px;transition:transform 0.2s;"></i>
+            </div>
+          </div>
+          <div id="vendor-${vName.replace(/\s/g, '_')}" style="display:none;">
+            ${isHound ? '<div class="ai-insight warning"><i class="ti ti-alert-triangle"></i> AI alert: This vendor is on the hound list. Monitor closely and consider backup suppliers.</div>' : '<div class="ai-insight"><i class="ti ti-sparkles"></i> AI note: Review open orders and send confirmation requests to stay on top of delivery dates.</div>'}
+            <table class="orders-table">
+              <thead><tr><th>PO #</th><th>Part</th><th>Qty</th><th>Due date</th><th>Status</th><th>Response</th><th>Action</th></tr></thead>
+              <tbody>
+                ${orders.map(o => `
+                  <tr>
+                    <td><strong>${o.po_number}</strong></td>
+                    <td>${o.parts?.name || '—'}</td>
+                    <td>${o.quantity}</td>
+                    <td>${o.due_date ? new Date(o.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}</td>
+                    <td>${getStatusBadge(o.status)}</td>
+                    <td>
+                      <div class="confirm-btns">
+                        <button class="c-btn ${o.vendor_response === 'confirmed' ? 'confirmed' : ''}" onclick="updateResponse('${o.id}', 'confirmed')" title="Confirmed">✅</button>
+                        <button class="c-btn ${o.vendor_response === 'rejected' ? 'rejected' : ''}" onclick="updateResponse('${o.id}', 'rejected')" title="Rejected">❌</button>
+                        <button class="c-btn ${o.vendor_response === 'counter' ? 'counter' : ''}" onclick="updateResponse('${o.id}', 'counter')" title="Counter">🟡</button>
+                        ${o.vendor_response ? `<span style="font-size:10px;color:#666;">${o.vendor_response}</span>` : '<span style="font-size:10px;color:#999;">Awaiting</span>'}
+                      </div>
+                    </td>
+                    <td><button class="btn" style="font-size:11px;padding:3px 8px;" onclick="deleteOrder('${o.id}', '${o.po_number}')">Delete</button></td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+            <div class="send-row">
+              <span style="font-size:11px;color:#999;">Vendor receives a link — no login required</span>
+              <button class="btn btn-primary" style="font-size:11px;" onclick="sendVendor('${vName}')"><i class="ti ti-send"></i> Send to ${vName}</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function toggleVendor(id) {
+    const el = document.getElementById('vendor-' + id);
+    const chevron = document.getElementById('chevron-' + id);
+    const open = el.style.display === 'block';
+    el.style.display = open ? 'none' : 'block';
+    chevron.style.transform = open ? '' : 'rotate(180deg)';
+  }
+
+  async function updateResponse(orderId, response) {
+    const { error } = await db.from('purchase_orders').update({ vendor_response: response }).eq('id', orderId);
+    if (error) { alert('Error: ' + error.message); return; }
+    loadOrders();
+  }
+
+  async function createPO() {
+    const vendorId = document.getElementById('po-vendor').value;
+    const partId = document.getElementById('po-part').value;
+    const qty = parseInt(document.getElementById('po-qty').value);
+    const poNumber = document.getElementById('po-number').value;
+    const dueDate = document.getElementById('po-date').value;
+    const status = document.getElementById('po-status').value;
+
+    if (!poNumber || !qty || !dueDate) { alert('Please fill in PO number, quantity, and due date.'); return; }
+
+    const { error } = await db.from('purchase_orders').insert({
+      vendor_id: vendorId,
+      part_id: partId,
+      quantity: qty,
+      po_number: poNumber,
+      due_date: dueDate,
+      status: status
+    });
+
+    if (error) { alert('Error creating PO: ' + error.message); return; }
+    alert('✅ Purchase order ' + poNumber + ' created successfully!');
+    toggleNewPO();
+    loadOrders();
+  }
+
+  async function deleteOrder(id, poNumber) {
+    if (!confirm('Delete ' + poNumber + '?')) return;
+    const { error } = await db.from('purchase_orders').delete().eq('id', id);
+    if (error) { alert('Error: ' + error.message); return; }
+    loadOrders();
+  }
+
+  function toggleNewPO() {
+    const form = document.getElementById('new-po-form');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function sendVendor(name) {
+    alert('Report sent to ' + name + '!\n\nThey will receive a secure email link to confirm, reject, or counter each order line. No login required.');
+  }
+
+  function sendAll() {
+    alert('Open order reports sent to all vendors!\n\nEach vendor receives a unique secure link.');
+  }
+
+  loadOrders();
 </script>
 </body>
 </html>
