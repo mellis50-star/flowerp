@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FlowERP — Inventory & Runout Report</title>
+  <title>FlowERP — Inventory</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="auth.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -18,7 +19,8 @@
     .nav-item:hover { background: #f5f5f5; color: #111; }
     .nav-item.active { background: #f0f7ff; color: #185FA5; font-weight: 500; border-left: 2px solid #378ADD; }
     .nav-item i { font-size: 16px; }
-    .sidebar-footer { margin-top: auto; padding: 1rem 1.1rem; border-top: 1px solid #eee; display: flex; align-items: center; gap: 8px; }
+    .sidebar-footer { margin-top: auto; padding: 1rem 1.1rem; border-top: 1px solid #eee; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .sidebar-footer:hover { background: #f5f5f5; }
     .avatar { width: 30px; height: 30px; border-radius: 50%; background: #378ADD; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; flex-shrink: 0; }
     .user-name { font-size: 12px; font-weight: 500; color: #111; }
     .user-company { font-size: 11px; color: #999; }
@@ -29,12 +31,30 @@
     .btn:hover { background: #f5f5f5; }
     .btn-primary { background: #378ADD; border-color: #378ADD; color: #fff; }
     .btn-primary:hover { background: #185FA5; }
+    .btn-danger { background: #FCEBEB; border-color: #F09595; color: #A32D2D; }
     .content { padding: 1.5rem; flex: 1; }
     .badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 500; }
     .badge-green { background: #EAF3DE; color: #3B6D11; }
     .badge-amber { background: #FAEEDA; color: #854F0B; }
     .badge-red { background: #FCEBEB; color: #A32D2D; }
     .badge-blue { background: #E6F1FB; color: #185FA5; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* FORM */
+    .form-card { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+    .form-card h3 { font-size: 15px; font-weight: 600; color: #111; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 8px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem; }
+    .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 1rem; }
+    .form-group label { font-size: 11px; font-weight: 500; color: #666; display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .form-group input, .form-group select { width: 100%; font-size: 13px; padding: 9px 11px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; outline: none; }
+    .form-group input:focus, .form-group select:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.1); }
+    .form-group small { font-size: 11px; color: #999; margin-top: 4px; display: block; }
+    .form-actions { display: flex; gap: 8px; }
+    .error-msg { background: #FCEBEB; border: 1px solid #F09595; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #A32D2D; margin-bottom: 1rem; display: none; }
+    .success-msg { background: #EAF3DE; border: 1px solid #7CB95A; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #3B6D11; margin-bottom: 1rem; display: none; }
+
+    /* INVENTORY */
     .alert { background: #FCEBEB; border: 1px solid #F09595; border-radius: 10px; padding: 0.85rem 1.1rem; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; }
     .alert-left { display: flex; align-items: center; gap: 10px; }
     .alert-left i { color: #A32D2D; font-size: 17px; }
@@ -68,6 +88,9 @@
     .live-dot { width: 7px; height: 7px; background: #1D9E75; border-radius: 50%; display: inline-block; margin-right: 5px; animation: pulse 2s infinite; }
     @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
     .loading { text-align: center; padding: 2rem; color: #999; font-size: 13px; }
+    .empty-state { text-align: center; padding: 3rem; background: #fff; border-radius: 12px; border: 1px solid #eee; }
+    .back-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #666; cursor: pointer; background: none; border: none; padding: 0; margin-bottom: 1rem; }
+    .back-btn:hover { color: #111; }
   </style>
 </head>
 <body>
@@ -85,124 +108,172 @@
     <a class="nav-item" href="vendors.html"><i class="ti ti-users"></i> Vendors</a>
     <div class="section-label">Account</div>
     <a class="nav-item" href="index.html"><i class="ti ti-settings"></i> Settings</a>
-    <a class="nav-item" href="index.html"><i class="ti ti-logout"></i> Log out</a>
-    <div class="sidebar-footer">
+    <div class="sidebar-footer" onclick="signOut()">
       <div class="avatar">ME</div>
-      <div><div class="user-name">Matthew E.</div><div class="user-company">Ridgeline Mfg. Co.</div></div>
+      <div>
+        <div class="user-name" id="user-name">Loading...</div>
+        <div class="user-company" id="user-company">Loading...</div>
+      </div>
+      <i class="ti ti-logout" style="margin-left:auto;color:#999;font-size:14px;"></i>
     </div>
   </div>
 
   <div class="main">
     <div class="topbar">
-      <span class="topbar-title">Runout report — live forecast</span>
+      <span class="topbar-title" id="page-title">Inventory & Runout Report</span>
       <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-size:12px;color:#999;"><span class="live-dot"></span>Live · from database</span>
+        <span style="font-size:12px;color:#999;"><span class="live-dot"></span>Live</span>
         <button class="btn" onclick="loadParts()"><i class="ti ti-refresh"></i> Refresh</button>
-        <button class="btn btn-primary"><i class="ti ti-plus"></i> Add part</button>
+        <button class="btn btn-primary" onclick="showView('add')"><i class="ti ti-plus"></i> Add part</button>
       </div>
     </div>
 
     <div class="content">
-      <div class="alert" id="main-alert">
-        <div class="alert-left">
-          <i class="ti ti-alert-triangle"></i>
-          <div>
-            <div class="alert-title" id="alert-title">Loading parts...</div>
-            <div class="alert-sub" id="alert-sub"></div>
+
+      <!-- ADD PART VIEW -->
+      <div class="view" id="view-add">
+        <button class="back-btn" onclick="showView('list')"><i class="ti ti-arrow-left"></i> Back to inventory</button>
+        <div class="form-card">
+          <h3><i class="ti ti-box" style="color:#378ADD;"></i> Add new part</h3>
+
+          <div class="error-msg" id="add-error"></div>
+          <div class="success-msg" id="add-success"></div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Part name *</label>
+              <input type="text" id="p-name" placeholder="e.g. Steel Rod 12mm" />
+            </div>
+            <div class="form-group">
+              <label>SKU / Part number *</label>
+              <input type="text" id="p-sku" placeholder="e.g. RM-1001" />
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Warehouse location</label>
+              <input type="text" id="p-location" placeholder="e.g. Bay A-3" />
+            </div>
+            <div class="form-group">
+              <label>Vendor</label>
+              <select id="p-vendor">
+                <option value="">Select vendor (optional)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label>Qty on hand *</label>
+              <input type="number" id="p-qty" placeholder="e.g. 500" min="0" />
+              <small>Current stock level</small>
+            </div>
+            <div class="form-group">
+              <label>Daily usage</label>
+              <input type="number" id="p-usage" placeholder="e.g. 12" min="0" />
+              <small>Units used per day</small>
+            </div>
+            <div class="form-group">
+              <label>Reorder point</label>
+              <input type="number" id="p-reorder" placeholder="e.g. 50" min="0" />
+              <small>Trigger reorder at this level</small>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="addPart()"><i class="ti ti-check"></i> Save part</button>
+            <button class="btn" onclick="showView('list')">Cancel</button>
           </div>
         </div>
-        <button class="btn" style="background:#fff;border-color:#F09595;color:#A32D2D;white-space:nowrap;">Emergency reorder</button>
       </div>
 
-      <div class="summary-cards">
-        <div class="summary-card"><div class="summary-card-label">Total parts</div><div class="summary-card-value" id="total-parts">—</div><div class="summary-card-sub">In database</div></div>
-        <div class="summary-card"><div class="summary-card-label">Critical &lt;7 days</div><div class="summary-card-value" id="critical-count" style="color:#E24B4A;">—</div><div class="summary-card-sub">Immediate action</div></div>
-        <div class="summary-card"><div class="summary-card-label">Warning 7–30 days</div><div class="summary-card-value" id="warning-count" style="color:#BA7517;">—</div><div class="summary-card-sub">Order soon</div></div>
-        <div class="summary-card"><div class="summary-card-label">Well stocked</div><div class="summary-card-value" id="stocked-count" style="color:#1D9E75;">—</div><div class="summary-card-sub">No action needed</div></div>
+      <!-- LIST VIEW -->
+      <div class="view active" id="view-list">
+        <div class="alert" id="main-alert">
+          <div class="alert-left">
+            <i class="ti ti-alert-triangle"></i>
+            <div>
+              <div class="alert-title" id="alert-title">Checking inventory...</div>
+              <div class="alert-sub" id="alert-sub"></div>
+            </div>
+          </div>
+          <button class="btn" style="background:#fff;border-color:#F09595;color:#A32D2D;white-space:nowrap;" onclick="showView('add')">+ Add stock</button>
+        </div>
+
+        <div class="summary-cards">
+          <div class="summary-card"><div class="summary-card-label">Total parts</div><div class="summary-card-value" id="total-parts">—</div><div class="summary-card-sub">In database</div></div>
+          <div class="summary-card"><div class="summary-card-label">Critical &lt;7 days</div><div class="summary-card-value" id="critical-count" style="color:#E24B4A;">—</div><div class="summary-card-sub">Immediate action</div></div>
+          <div class="summary-card"><div class="summary-card-label">Warning 7–30 days</div><div class="summary-card-value" id="warning-count" style="color:#BA7517;">—</div><div class="summary-card-sub">Order soon</div></div>
+          <div class="summary-card"><div class="summary-card-label">Well stocked</div><div class="summary-card-value" id="stocked-count" style="color:#1D9E75;">—</div><div class="summary-card-sub">No action needed</div></div>
+        </div>
+
+        <div class="filter-row">
+          <button class="filter-tab active" onclick="setTab(this, 'all')">All parts</button>
+          <button class="filter-tab" onclick="setTab(this, 'critical')">🔴 Critical</button>
+          <button class="filter-tab" onclick="setTab(this, 'warning')">🟡 Warning</button>
+          <button class="filter-tab" onclick="setTab(this, 'ok')">✅ Stocked</button>
+        </div>
+
+        <div id="parts-container">
+          <div class="loading">Loading parts from database...</div>
+        </div>
       </div>
 
-      <div class="filter-row">
-        <button class="filter-tab active" onclick="setTab(this, 'all')">All parts</button>
-        <button class="filter-tab" onclick="setTab(this, 'critical')">🔴 Critical</button>
-        <button class="filter-tab" onclick="setTab(this, 'warning')">🟡 Warning</button>
-        <button class="filter-tab" onclick="setTab(this, 'ok')">✅ Stocked</button>
-      </div>
-
-      <table>
-        <thead>
-          <tr><th>Part</th><th>On hand</th><th>Daily usage</th><th>Days until runout</th><th>Status</th><th>Actions</th></tr>
-        </thead>
-        <tbody id="parts-tbody">
-          <tr><td colspan="6" class="loading">Loading parts from database...</td></tr>
-        </tbody>
-      </table>
     </div>
   </div>
 </div>
 
 <script>
-  const { createClient } = supabase;
-  const db = createClient(
-    'https://sxpmubxcmdpptqbknwzh.supabase.co',
-    'sb_publishable_b8pKBMLXtEzEPtUPGsZhlA_1sOdAcTc'
-  );
-
   let allParts = [];
+  let allVendors = [];
   let currentFilter = 'all';
+  let companyId = null;
 
   function getDaysLeft(part) {
     return part.daily_usage > 0 ? Math.floor(part.qty_on_hand / part.daily_usage) : 999;
   }
 
-  function getPartCategory(days) {
+  function getCategory(days) {
     if (days <= 7) return 'critical';
     if (days <= 30) return 'warning';
     return 'ok';
   }
 
-  function renderParts(parts) {
-    const tbody = document.getElementById('parts-tbody');
-    if (parts.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="loading">No parts found.</td></tr>';
-      return;
+  function showView(view) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + view).classList.add('active');
+    document.getElementById('page-title').textContent = view === 'add' ? 'Add new part' : 'Inventory & Runout Report';
+    if (view === 'list') loadParts();
+  }
+
+  function setTab(el, filter) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderParts();
+  }
+
+  async function loadVendors() {
+    const { data } = await db.from('vendors').select('id, name').eq('company_id', companyId).order('name');
+    if (data) {
+      allVendors = data;
+      const select = document.getElementById('p-vendor');
+      select.innerHTML = '<option value="">Select vendor (optional)</option>' +
+        data.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
     }
-
-    tbody.innerHTML = parts.map(p => {
-      const days = getDaysLeft(p);
-      const category = getPartCategory(days);
-      const barColor = category === 'critical' ? '#E24B4A' : category === 'warning' ? '#BA7517' : '#1D9E75';
-      const barWidth = Math.min(100, (days / 30) * 100);
-      const daysText = days === 999 ? 'No usage data' : days + ' days' + (category === 'critical' ? ' ⚠' : '');
-      const daysColor = category === 'critical' ? '#E24B4A' : category === 'warning' ? '#BA7517' : '#1D9E75';
-      const rowBg = category === 'critical' ? 'background:#FFF5F5;' : category === 'warning' ? 'background:#FFFBF2;' : '';
-      const aiNote = category === 'critical'
-        ? `<tr class="ai-row-red"><td colspan="6"><i class="ti ti-sparkles"></i> AI: ${p.name} runs out in ${days} days. Immediate action required — create a purchase order now.</td></tr>`
-        : category === 'warning'
-        ? `<tr class="ai-row"><td colspan="6"><i class="ti ti-sparkles"></i> AI: ${p.name} has ${days} days of stock. Consider placing a reorder soon.</td></tr>`
-        : '';
-
-      return `
-        <tr style="${rowBg}">
-          <td><div class="part-name">${p.name}</div><div class="part-sku">SKU: ${p.sku}${p.location ? ' · ' + p.location : ''}</div></td>
-          <td><strong>${p.qty_on_hand}</strong> units</td>
-          <td style="color:#999;">~${p.daily_usage}/day</td>
-          <td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:${barWidth}%;background:${barColor};"></div></div><span class="days" style="color:${daysColor};">${daysText}</span></div></td>
-          <td><span class="badge ${category === 'critical' ? 'badge-red' : category === 'warning' ? 'badge-amber' : 'badge-green'}">${category === 'critical' ? 'Critical' : category === 'warning' ? 'Low' : 'OK'}</span></td>
-          <td><div class="action-btns"><button class="action-btn action-btn-primary" onclick="updateQty('${p.id}', '${p.name}', ${p.qty_on_hand})">Update qty</button><a href="atrisk.html" class="action-btn">Flag</a></div></td>
-        </tr>
-        ${aiNote}`;
-    }).join('');
   }
 
   async function loadParts() {
-    const { data, error } = await db.from('parts').select('*').order('qty_on_hand', { ascending: true });
+    if (!companyId) return;
+    const { data, error } = await db.from('parts').select('*').eq('company_id', companyId).order('qty_on_hand', { ascending: true });
     if (error) { console.error(error); return; }
 
-    allParts = data.map(p => ({ ...p, daysLeft: getDaysLeft(p) }));
+    allParts = data.map(p => ({ ...p, daysLeft: getDaysLeft(p), category: getCategory(getDaysLeft(p)) }));
 
-    const critical = allParts.filter(p => getPartCategory(p.daysLeft) === 'critical');
-    const warning = allParts.filter(p => getPartCategory(p.daysLeft) === 'warning');
-    const ok = allParts.filter(p => getPartCategory(p.daysLeft) === 'ok');
+    const critical = allParts.filter(p => p.category === 'critical');
+    const warning = allParts.filter(p => p.category === 'warning');
+    const ok = allParts.filter(p => p.category === 'ok');
 
     document.getElementById('total-parts').textContent = data.length;
     document.getElementById('critical-count').textContent = critical.length;
@@ -210,10 +281,17 @@
     document.getElementById('stocked-count').textContent = ok.length;
 
     if (critical.length > 0) {
-      document.getElementById('alert-title').textContent = critical.length + ' parts will run out within 7 days — assuming no new receipts';
+      document.getElementById('alert-title').textContent = critical.length + ' parts will run out within 7 days';
       document.getElementById('alert-sub').textContent = critical.map(p => p.name + ' (' + p.daysLeft + ' days)').join(' · ');
+    } else if (data.length === 0) {
+      document.getElementById('alert-title').textContent = 'No parts yet — add your first part to start tracking inventory';
+      document.getElementById('alert-sub').textContent = '';
+      document.getElementById('main-alert').style.background = '#f0f7ff';
+      document.getElementById('main-alert').style.borderColor = '#cce0f5';
+      document.getElementById('main-alert').querySelector('i').style.color = '#185FA5';
+      document.getElementById('alert-title').style.color = '#185FA5';
     } else {
-      document.getElementById('alert-title').textContent = 'All parts are well stocked — no critical shortages';
+      document.getElementById('alert-title').textContent = 'All parts well stocked — no critical shortages';
       document.getElementById('alert-sub').textContent = '';
       document.getElementById('main-alert').style.background = '#EAF3DE';
       document.getElementById('main-alert').style.borderColor = '#7CB95A';
@@ -221,20 +299,105 @@
       document.getElementById('alert-title').style.color = '#3B6D11';
     }
 
-    applyFilter();
+    renderParts();
   }
 
-  function applyFilter() {
+  function renderParts() {
+    const container = document.getElementById('parts-container');
     let filtered = allParts;
-    if (currentFilter !== 'all') filtered = allParts.filter(p => getPartCategory(p.daysLeft) === currentFilter);
-    renderParts(filtered);
+    if (currentFilter !== 'all') filtered = allParts.filter(p => p.category === currentFilter);
+
+    if (filtered.length === 0 && allParts.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div style="font-size:40px;margin-bottom:1rem;">📦</div>
+          <h3>No parts yet</h3>
+          <p>Add your first part to start tracking inventory and runout forecasts.</p>
+          <button class="btn btn-primary" onclick="showView('add')"><i class="ti ti-plus"></i> Add your first part</button>
+        </div>`;
+      return;
+    }
+
+    if (filtered.length === 0) {
+      container.innerHTML = '<div class="loading">No parts match this filter.</div>';
+      return;
+    }
+
+    container.innerHTML = `<table>
+      <thead><tr><th>Part</th><th>On hand</th><th>Daily usage</th><th>Days until runout</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+        ${filtered.map(p => {
+          const barColor = p.category === 'critical' ? '#E24B4A' : p.category === 'warning' ? '#BA7517' : '#1D9E75';
+          const barWidth = Math.min(100, p.daysLeft === 999 ? 100 : (p.daysLeft / 30) * 100);
+          const daysText = p.daysLeft === 999 ? 'No usage set' : p.daysLeft + ' days' + (p.category === 'critical' ? ' ⚠' : '');
+          const daysColor = p.category === 'critical' ? '#E24B4A' : p.category === 'warning' ? '#BA7517' : '#1D9E75';
+          const rowBg = p.category === 'critical' ? 'background:#FFF5F5;' : p.category === 'warning' ? 'background:#FFFBF2;' : '';
+          const aiNote = p.category === 'critical'
+            ? `<tr class="ai-row-red"><td colspan="6"><i class="ti ti-sparkles"></i> AI: ${p.name} runs out in ${p.daysLeft} days. Create a purchase order immediately.</td></tr>`
+            : p.category === 'warning'
+            ? `<tr class="ai-row"><td colspan="6"><i class="ti ti-sparkles"></i> AI: ${p.name} has ${p.daysLeft} days of stock remaining. Consider reordering soon.</td></tr>`
+            : '';
+
+          return `
+            <tr style="${rowBg}">
+              <td><div class="part-name">${p.name}</div><div class="part-sku">SKU: ${p.sku}${p.location ? ' · ' + p.location : ''}</div></td>
+              <td><strong>${p.qty_on_hand}</strong> units</td>
+              <td style="color:#999;">~${p.daily_usage}/day</td>
+              <td><div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:${barWidth}%;background:${barColor};"></div></div><span class="days" style="color:${daysColor};">${daysText}</span></div></td>
+              <td><span class="badge ${p.category === 'critical' ? 'badge-red' : p.category === 'warning' ? 'badge-amber' : 'badge-green'}">${p.category === 'critical' ? 'Critical' : p.category === 'warning' ? 'Low' : 'OK'}</span></td>
+              <td>
+                <div class="action-btns">
+                  <button class="action-btn action-btn-primary" onclick="updateQty('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${p.qty_on_hand})">Update qty</button>
+                  <button class="action-btn" onclick="deletePart('${p.id}', '${p.name.replace(/'/g, "\\'")}')">Delete</button>
+                </div>
+              </td>
+            </tr>
+            ${aiNote}`;
+        }).join('')}
+      </tbody>
+    </table>`;
   }
 
-  function setTab(el, filter) {
-    currentFilter = filter;
-    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
-    applyFilter();
+  async function addPart() {
+    const name = document.getElementById('p-name').value.trim();
+    const sku = document.getElementById('p-sku').value.trim();
+    const location = document.getElementById('p-location').value.trim();
+    const vendorId = document.getElementById('p-vendor').value || null;
+    const qty = parseInt(document.getElementById('p-qty').value) || 0;
+    const usage = parseInt(document.getElementById('p-usage').value) || 0;
+    const reorder = parseInt(document.getElementById('p-reorder').value) || 0;
+
+    document.getElementById('add-error').style.display = 'none';
+    document.getElementById('add-success').style.display = 'none';
+
+    if (!name || !sku) {
+      document.getElementById('add-error').textContent = 'Part name and SKU are required.';
+      document.getElementById('add-error').style.display = 'block';
+      return;
+    }
+
+    const { error } = await db.from('parts').insert({
+      name, sku, location,
+      vendor_id: vendorId,
+      qty_on_hand: qty,
+      daily_usage: usage,
+      reorder_point: reorder,
+      company_id: companyId
+    });
+
+    if (error) {
+      document.getElementById('add-error').textContent = 'Error saving part: ' + error.message;
+      document.getElementById('add-error').style.display = 'block';
+      return;
+    }
+
+    document.getElementById('add-success').textContent = '✅ ' + name + ' added to inventory!';
+    document.getElementById('add-success').style.display = 'block';
+
+    ['p-name','p-sku','p-location','p-qty','p-usage','p-reorder'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('p-vendor').value = '';
+
+    setTimeout(() => showView('list'), 1200);
   }
 
   async function updateQty(id, name, currentQty) {
@@ -242,15 +405,26 @@
     if (newQty === null || newQty === '') return;
     const qty = parseInt(newQty);
     if (isNaN(qty) || qty < 0) { alert('Please enter a valid number.'); return; }
-
-    const { error } = await db.from('parts').update({ qty_on_hand: qty }).eq('id', id);
-    if (error) { alert('Error updating quantity: ' + error.message); return; }
-
-    alert(`✅ ${name} updated to ${qty} units!`);
+    const { error } = await db.from('parts').update({ qty_on_hand: qty }).eq('id', id).eq('company_id', companyId);
+    if (error) { alert('Error: ' + error.message); return; }
+    alert('✅ ' + name + ' updated to ' + qty + ' units!');
     loadParts();
   }
 
-  loadParts();
+  async function deletePart(id, name) {
+    if (!confirm('Delete ' + name + '? This cannot be undone.')) return;
+    const { error } = await db.from('parts').delete().eq('id', id).eq('company_id', companyId);
+    if (error) { alert('Error: ' + error.message); return; }
+    loadParts();
+  }
+
+  // Init
+  initAuth().then(result => {
+    if (!result) return;
+    companyId = result.companyId;
+    loadVendors();
+    loadParts();
+  });
 </script>
 </body>
 </html>

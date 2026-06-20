@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FlowERP — Vendors</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="auth.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -18,7 +19,8 @@
     .nav-item:hover { background: #f5f5f5; color: #111; }
     .nav-item.active { background: #f0f7ff; color: #185FA5; font-weight: 500; border-left: 2px solid #378ADD; }
     .nav-item i { font-size: 16px; }
-    .sidebar-footer { margin-top: auto; padding: 1rem 1.1rem; border-top: 1px solid #eee; display: flex; align-items: center; gap: 8px; }
+    .sidebar-footer { margin-top: auto; padding: 1rem 1.1rem; border-top: 1px solid #eee; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .sidebar-footer:hover { background: #f5f5f5; }
     .avatar { width: 30px; height: 30px; border-radius: 50%; background: #378ADD; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; flex-shrink: 0; }
     .user-name { font-size: 12px; font-weight: 500; color: #111; }
     .user-company { font-size: 11px; color: #999; }
@@ -29,6 +31,7 @@
     .btn:hover { background: #f5f5f5; }
     .btn-primary { background: #378ADD; border-color: #378ADD; color: #fff; }
     .btn-primary:hover { background: #185FA5; }
+    .btn-danger { background: #FCEBEB; border-color: #F09595; color: #A32D2D; }
     .content { padding: 1.5rem; flex: 1; }
     .badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 500; }
     .badge-green { background: #EAF3DE; color: #3B6D11; }
@@ -37,12 +40,26 @@
     .badge-blue { background: #E6F1FB; color: #185FA5; }
     .view { display: none; }
     .view.active { display: block; }
+
+    /* FORM */
+    .form-card { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+    .form-card h3 { font-size: 15px; font-weight: 600; color: #111; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 8px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem; }
+    .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 1rem; }
+    .form-group label { font-size: 11px; font-weight: 500; color: #666; display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; font-size: 13px; padding: 9px 11px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; outline: none; font-family: inherit; }
+    .form-group input:focus, .form-group select:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.1); }
+    .form-actions { display: flex; gap: 8px; }
+    .error-msg { background: #FCEBEB; border: 1px solid #F09595; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #A32D2D; margin-bottom: 1rem; display: none; }
+    .success-msg { background: #EAF3DE; border: 1px solid #7CB95A; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #3B6D11; margin-bottom: 1rem; display: none; }
+
+    /* VENDOR LIST */
     .filter-row { display: flex; align-items: center; gap: 8px; margin-bottom: 1.25rem; }
     .filter-row input { font-size: 13px; padding: 7px 12px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; width: 240px; }
     .filter-tab { font-size: 12px; padding: 5px 12px; border-radius: 99px; border: 1px solid #ddd; background: transparent; color: #666; cursor: pointer; }
     .filter-tab.active { background: #378ADD; border-color: #378ADD; color: #fff; }
     .vendor-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .vendor-card { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 1.1rem; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+    .vendor-card { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 1.1rem; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; position: relative; }
     .vendor-card:hover { border-color: #ccc; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
     .vendor-card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 0.85rem; }
     .vendor-avatar { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
@@ -58,8 +75,16 @@
     .score-fill { height: 100%; border-radius: 99px; }
     .vendor-tags { display: flex; flex-wrap: wrap; gap: 4px; }
     .tag { font-size: 10px; padding: 2px 7px; border-radius: 99px; background: #f5f5f5; color: #666; }
+    .delete-btn { position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; border-radius: 6px; border: 1px solid #ddd; background: #fff; cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 12px; color: #A32D2D; }
+    .vendor-card:hover .delete-btn { display: flex; }
     .add-card { border: 1px dashed #ddd; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; min-height: 180px; color: #999; font-size: 13px; gap: 8px; }
-    .add-card:hover { background: #fafafa; color: #111; }
+    .add-card:hover { background: #fafafa; color: #111; border-color: #378ADD; }
+    .empty-state { text-align: center; padding: 3rem; background: #fff; border-radius: 12px; border: 1px solid #eee; }
+    .empty-state h3 { font-size: 16px; font-weight: 600; color: #111; margin-bottom: 8px; }
+    .empty-state p { font-size: 13px; color: #999; margin-bottom: 1.5rem; }
+    .loading { text-align: center; padding: 2rem; color: #999; font-size: 13px; }
+
+    /* DETAIL VIEW */
     .back-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #666; cursor: pointer; background: none; border: none; padding: 0; margin-bottom: 1rem; }
     .back-btn:hover { color: #111; }
     .profile-header { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
@@ -89,7 +114,6 @@
     .note-text { font-size: 12px; color: #333; line-height: 1.5; }
     .note-input-row { display: flex; gap: 6px; margin-top: 8px; }
     .note-input-row input { flex: 1; font-size: 12px; padding: 7px 10px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; }
-    .loading { text-align: center; padding: 2rem; color: #999; font-size: 13px; }
   </style>
 </head>
 <body>
@@ -107,10 +131,13 @@
     <a class="nav-item active" href="vendors.html"><i class="ti ti-users"></i> Vendors</a>
     <div class="section-label">Account</div>
     <a class="nav-item" href="index.html"><i class="ti ti-settings"></i> Settings</a>
-    <a class="nav-item" href="index.html"><i class="ti ti-logout"></i> Log out</a>
-    <div class="sidebar-footer">
+    <div class="sidebar-footer" onclick="signOut()">
       <div class="avatar">ME</div>
-      <div><div class="user-name">Matthew E.</div><div class="user-company">Ridgeline Mfg. Co.</div></div>
+      <div>
+        <div class="user-name" id="user-name">Loading...</div>
+        <div class="user-company" id="user-company">Loading...</div>
+      </div>
+      <i class="ti ti-logout" style="margin-left:auto;color:#999;font-size:14px;"></i>
     </div>
   </div>
 
@@ -118,12 +145,79 @@
     <div class="topbar">
       <span class="topbar-title" id="page-title">Vendor profiles</span>
       <div style="display:flex;gap:8px;">
-        <button class="btn"><i class="ti ti-upload"></i> Import</button>
-        <button class="btn btn-primary" onclick="showAddForm()"><i class="ti ti-plus"></i> Add vendor</button>
+        <button class="btn btn-primary" onclick="showView('add')"><i class="ti ti-plus"></i> Add vendor</button>
       </div>
     </div>
 
     <div class="content">
+
+      <!-- ADD VENDOR VIEW -->
+      <div class="view" id="view-add">
+        <button class="back-btn" onclick="showView('list')"><i class="ti ti-arrow-left"></i> Back to vendors</button>
+        <div class="form-card">
+          <h3><i class="ti ti-users" style="color:#378ADD;"></i> Add new vendor</h3>
+
+          <div class="error-msg" id="add-error"></div>
+          <div class="success-msg" id="add-success"></div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Vendor name *</label>
+              <input type="text" id="v-name" placeholder="e.g. Acme Metals" />
+            </div>
+            <div class="form-group">
+              <label>Type / Category</label>
+              <input type="text" id="v-type" placeholder="e.g. Raw materials, Components" />
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Email address</label>
+              <input type="email" id="v-email" placeholder="orders@vendor.com" />
+            </div>
+            <div class="form-group">
+              <label>Phone number</label>
+              <input type="text" id="v-phone" placeholder="(555) 555-0100" />
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Location</label>
+              <input type="text" id="v-location" placeholder="e.g. Pittsburgh, PA" />
+            </div>
+            <div class="form-group">
+              <label>Status</label>
+              <select id="v-status">
+                <option value="monitor">Monitor — keep an eye on</option>
+                <option value="trusted">Trusted — reliable vendor</option>
+                <option value="hound">Hound list — needs attention</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label>Overall score (0-100)</label>
+              <input type="number" id="v-score" placeholder="e.g. 85" min="0" max="100" value="75" />
+            </div>
+            <div class="form-group">
+              <label>On-time delivery %</label>
+              <input type="number" id="v-ontime" placeholder="e.g. 90" min="0" max="100" value="80" />
+            </div>
+            <div class="form-group">
+              <label>Lead time (days)</label>
+              <input type="number" id="v-leadtime" placeholder="e.g. 7" min="1" value="7" />
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="addVendor()"><i class="ti ti-check"></i> Save vendor</button>
+            <button class="btn" onclick="showView('list')">Cancel</button>
+          </div>
+        </div>
+      </div>
 
       <!-- LIST VIEW -->
       <div class="view active" id="view-list">
@@ -135,13 +229,13 @@
           <button class="filter-tab" onclick="filterByStatus(this, 'monitor')">👁 Monitor</button>
         </div>
         <div class="vendor-grid" id="vendor-grid">
-          <div class="loading">Loading vendors from database...</div>
+          <div class="loading">Loading vendors...</div>
         </div>
       </div>
 
       <!-- DETAIL VIEW -->
       <div class="view" id="view-detail">
-        <button class="back-btn" onclick="showList()"><i class="ti ti-arrow-left"></i> Back to all vendors</button>
+        <button class="back-btn" onclick="showView('list')"><i class="ti ti-arrow-left"></i> Back to all vendors</button>
         <div id="detail-content"></div>
       </div>
 
@@ -150,20 +244,9 @@
 </div>
 
 <script>
-  const { createClient } = supabase;
-  const db = createClient(
-    'https://sxpmubxcmdpptqbknwzh.supabase.co',
-    'sb_publishable_b8pKBMLXtEzEPtUPGsZhlA_1sOdAcTc'
-  );
-
   let allVendors = [];
   let currentFilter = 'all';
-
-  const avatarColors = {
-    'trusted': { bg: '#E6F1FB', color: '#185FA5' },
-    'monitor': { bg: '#FAEEDA', color: '#854F0B' },
-    'hound': { bg: '#FCEBEB', color: '#A32D2D' }
-  };
+  let companyId = null;
 
   function getInitials(name) {
     return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -173,12 +256,14 @@
     return score >= 85 ? '#1D9E75' : score >= 65 ? '#BA7517' : '#E24B4A';
   }
 
-  function getScoreBarColor(score) {
+  function getBarColor(score) {
     return score >= 85 ? '#639922' : score >= 65 ? '#BA7517' : '#E24B4A';
   }
 
-  function getScorePillClass(score) {
-    return score >= 85 ? 'score-high' : score >= 65 ? 'score-mid' : 'score-low';
+  function getAvatarColors(status) {
+    if (status === 'trusted') return { bg: '#E6F1FB', color: '#185FA5' };
+    if (status === 'hound') return { bg: '#FCEBEB', color: '#A32D2D' };
+    return { bg: '#FAEEDA', color: '#854F0B' };
   }
 
   function getStatusBadge(status) {
@@ -187,42 +272,54 @@
     return '<span class="badge badge-amber">Monitor</span>';
   }
 
-  function renderVendorCard(v) {
-    const colors = avatarColors[v.status] || avatarColors['monitor'];
-    return `
-      <div class="vendor-card" onclick="showDetail('${v.id}')">
-        <div class="vendor-card-top">
-          <div class="vendor-avatar" style="background:${colors.bg};color:${colors.color};">${getInitials(v.name)}</div>
-          <div><div class="vendor-name">${v.name}</div><div class="vendor-type">${v.type || 'Supplier'}</div></div>
-        </div>
-        <div class="score-row">
-          <span class="score-label">Overall score</span>
-          <span class="score-pill ${getScorePillClass(v.score)}">${v.score} / 100</span>
-        </div>
-        <div class="score-bar"><div class="score-fill" style="width:${v.score}%;background:${getScoreBarColor(v.score)};"></div></div>
-        <div class="vendor-tags">
-          ${getStatusBadge(v.status)}
-          <span class="tag">On-time ${v.on_time_percent}%</span>
-          ${v.location ? `<span class="tag">${v.location}</span>` : ''}
-        </div>
-      </div>`;
-  }
-
-  function renderVendorGrid(vendors) {
-    const grid = document.getElementById('vendor-grid');
-    if (vendors.length === 0) {
-      grid.innerHTML = '<div class="loading">No vendors found.</div>';
-      return;
-    }
-    grid.innerHTML = vendors.map(renderVendorCard).join('') +
-      `<div class="add-card" onclick="showAddForm()"><i class="ti ti-plus" style="font-size:22px;"></i> Add vendor</div>`;
+  function showView(view) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + view).classList.add('active');
+    const titles = { list: 'Vendor profiles', add: 'Add new vendor', detail: document.getElementById('page-title').textContent };
+    document.getElementById('page-title').textContent = titles[view] || 'Vendors';
+    if (view === 'list') loadVendors();
   }
 
   async function loadVendors() {
-    const { data, error } = await db.from('vendors').select('*').order('score', { ascending: false });
+    if (!companyId) return;
+    const { data, error } = await db.from('vendors').select('*').eq('company_id', companyId).order('score', { ascending: false });
     if (error) { console.error(error); return; }
     allVendors = data;
-    renderVendorGrid(data);
+    renderVendors(data);
+  }
+
+  function renderVendors(vendors) {
+    const grid = document.getElementById('vendor-grid');
+
+    if (vendors.length === 0) {
+      grid.innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1;">
+          <div style="font-size:40px;margin-bottom:1rem;">🏭</div>
+          <h3>No vendors yet</h3>
+          <p>Add your first vendor to get started tracking delivery performance and scores.</p>
+          <button class="btn btn-primary" onclick="showView('add')"><i class="ti ti-plus"></i> Add your first vendor</button>
+        </div>`;
+      return;
+    }
+
+    grid.innerHTML = vendors.map(v => {
+      const colors = getAvatarColors(v.status);
+      return `
+        <div class="vendor-card" onclick="showDetail('${v.id}')">
+          <button class="delete-btn" onclick="event.stopPropagation();deleteVendor('${v.id}', '${v.name.replace(/'/g, "\\'")}')">✕</button>
+          <div class="vendor-card-top">
+            <div class="vendor-avatar" style="background:${colors.bg};color:${colors.color};">${getInitials(v.name)}</div>
+            <div><div class="vendor-name">${v.name}</div><div class="vendor-type">${v.type || 'Supplier'}</div></div>
+          </div>
+          <div class="score-row"><span class="score-label">Overall score</span><span class="score-pill ${v.score >= 85 ? 'score-high' : v.score >= 65 ? 'score-mid' : 'score-low'}">${v.score} / 100</span></div>
+          <div class="score-bar"><div class="score-fill" style="width:${v.score}%;background:${getBarColor(v.score)};"></div></div>
+          <div class="vendor-tags">
+            ${getStatusBadge(v.status)}
+            <span class="tag">On-time ${v.on_time_percent}%</span>
+            ${v.location ? `<span class="tag">${v.location}</span>` : ''}
+          </div>
+        </div>`;
+    }).join('') + `<div class="add-card" onclick="showView('add')"><i class="ti ti-plus" style="font-size:22px;"></i> Add vendor</div>`;
   }
 
   function filterVendors() {
@@ -230,7 +327,7 @@
     let filtered = allVendors;
     if (currentFilter !== 'all') filtered = filtered.filter(v => v.status === currentFilter);
     if (search) filtered = filtered.filter(v => v.name.toLowerCase().includes(search) || (v.type || '').toLowerCase().includes(search));
-    renderVendorGrid(filtered);
+    renderVendors(filtered);
   }
 
   function filterByStatus(el, status) {
@@ -240,17 +337,66 @@
     filterVendors();
   }
 
+  async function addVendor() {
+    const name = document.getElementById('v-name').value.trim();
+    const type = document.getElementById('v-type').value.trim();
+    const email = document.getElementById('v-email').value.trim();
+    const phone = document.getElementById('v-phone').value.trim();
+    const location = document.getElementById('v-location').value.trim();
+    const status = document.getElementById('v-status').value;
+    const score = parseInt(document.getElementById('v-score').value) || 75;
+    const ontime = parseInt(document.getElementById('v-ontime').value) || 80;
+
+    document.getElementById('add-error').style.display = 'none';
+    document.getElementById('add-success').style.display = 'none';
+
+    if (!name) {
+      document.getElementById('add-error').textContent = 'Vendor name is required.';
+      document.getElementById('add-error').style.display = 'block';
+      return;
+    }
+
+    const { error } = await db.from('vendors').insert({
+      name, type, email, phone, location, status, score,
+      on_time_percent: ontime,
+      company_id: companyId
+    });
+
+    if (error) {
+      document.getElementById('add-error').textContent = 'Error saving vendor: ' + error.message;
+      document.getElementById('add-error').style.display = 'block';
+      return;
+    }
+
+    document.getElementById('add-success').textContent = '✅ ' + name + ' added successfully!';
+    document.getElementById('add-success').style.display = 'block';
+
+    // Clear form
+    ['v-name','v-type','v-email','v-phone','v-location'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('v-score').value = '75';
+    document.getElementById('v-ontime').value = '80';
+    document.getElementById('v-status').value = 'monitor';
+
+    setTimeout(() => showView('list'), 1200);
+  }
+
+  async function deleteVendor(id, name) {
+    if (!confirm('Delete ' + name + '? This cannot be undone.')) return;
+    const { error } = await db.from('vendors').delete().eq('id', id).eq('company_id', companyId);
+    if (error) { alert('Error: ' + error.message); return; }
+    loadVendors();
+  }
+
   async function showDetail(id) {
     const vendor = allVendors.find(v => v.id === id);
     if (!vendor) return;
-
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById('view-detail').classList.add('active');
     document.getElementById('page-title').textContent = vendor.name;
 
-    const colors = avatarColors[vendor.status] || avatarColors['monitor'];
+    const colors = getAvatarColors(vendor.status);
     const scoreColor = getScoreColor(vendor.score);
-    const barColor = getScoreBarColor(vendor.score);
+    const barColor = getBarColor(vendor.score);
 
     document.getElementById('detail-content').innerHTML = `
       <div class="profile-header">
@@ -266,7 +412,7 @@
           </div>
         </div>
         <div style="display:flex;gap:8px;">
-          <a href="orders.html" class="btn"><i class="ti ti-file-report"></i> Send open order report</a>
+          <a href="orders.html" class="btn"><i class="ti ti-file-report"></i> Open order report</a>
           <button class="btn btn-primary"><i class="ti ti-plus"></i> New PO</button>
         </div>
       </div>
@@ -274,7 +420,7 @@
       <div class="overall-score" style="${vendor.status === 'hound' ? 'background:#FFF5F5;' : ''}">
         <div class="overall-num" style="color:${scoreColor};">${vendor.score}</div>
         <div style="flex:1;">
-          <div style="font-size:12px;color:#666;margin-bottom:8px;">Overall vendor score — ${getStatusBadge(vendor.status)}</div>
+          <div style="font-size:12px;color:#666;margin-bottom:8px;">Overall score — ${getStatusBadge(vendor.status)}</div>
           <div class="score-breakdown">
             <div class="score-row-detail"><span>On-time delivery</span><div class="mini-bar"><div class="mini-fill" style="width:${vendor.on_time_percent}%;background:${barColor};"></div></div><span>${vendor.on_time_percent}%</span></div>
             <div class="score-row-detail"><span>Overall score</span><div class="mini-bar"><div class="mini-fill" style="width:${vendor.score}%;background:${barColor};"></div></div><span>${vendor.score}</span></div>
@@ -283,30 +429,27 @@
       </div>
 
       <div class="score-cards">
-        <div class="score-card"><div class="score-card-label">Vendor score</div><div class="score-card-value" style="color:${scoreColor};">${vendor.score}</div><div class="score-card-sub">Out of 100</div></div>
-        <div class="score-card"><div class="score-card-label">On-time rate</div><div class="score-card-value">${vendor.on_time_percent}%</div><div class="score-card-sub">Delivery performance</div></div>
-        <div class="score-card"><div class="score-card-label">Status</div><div class="score-card-value" style="font-size:14px;margin-top:4px;">${vendor.status === 'trusted' ? '✓ Trusted' : vendor.status === 'hound' ? '⚠ Hound list' : '👁 Monitor'}</div><div class="score-card-sub">Current standing</div></div>
-        <div class="score-card"><div class="score-card-label">Type</div><div class="score-card-value" style="font-size:14px;margin-top:4px;">${vendor.type || '—'}</div><div class="score-card-sub">Supplier category</div></div>
+        <div class="score-card"><div class="score-card-label">Score</div><div class="score-card-value" style="color:${scoreColor};">${vendor.score}</div><div class="score-card-sub">Out of 100</div></div>
+        <div class="score-card"><div class="score-card-label">On-time</div><div class="score-card-value">${vendor.on_time_percent}%</div><div class="score-card-sub">Delivery rate</div></div>
+        <div class="score-card"><div class="score-card-label">Status</div><div class="score-card-value" style="font-size:13px;margin-top:4px;">${vendor.status === 'trusted' ? '✓ Trusted' : vendor.status === 'hound' ? '⚠ Hound' : '👁 Monitor'}</div></div>
+        <div class="score-card"><div class="score-card-label">Type</div><div class="score-card-value" style="font-size:13px;margin-top:4px;">${vendor.type || '—'}</div></div>
       </div>
 
       <div class="card">
-        <div class="card-header"><span class="card-title">Notes & history</span>
-          <button class="btn btn-primary" style="font-size:11px;padding:4px 10px;" onclick="focusNote()"><i class="ti ti-plus"></i> Add note</button>
-        </div>
+        <div class="card-header"><span class="card-title">Notes</span><button class="btn btn-primary" style="font-size:11px;padding:4px 10px;" onclick="document.getElementById('note-input-${vendor.id}').focus()"><i class="ti ti-plus"></i> Add note</button></div>
         <div id="notes-${vendor.id}">
-          <div class="note-item"><div class="note-meta">📌 Pinned</div><div class="note-text">Contact ${vendor.name} at ${vendor.email || 'email not set'} for orders and inquiries.</div></div>
+          <div class="note-item"><div class="note-meta">System note</div><div class="note-text">Vendor added to FlowERP. Add notes to track performance, contacts, and issues.</div></div>
         </div>
         <div class="note-input-row">
           <input type="text" id="note-input-${vendor.id}" placeholder="Add a note about this vendor..." />
           <button class="btn btn-primary" onclick="saveNote('${vendor.id}')">Save</button>
         </div>
       </div>
-    `;
-  }
 
-  function focusNote() {
-    const inputs = document.querySelectorAll('[id^="note-input-"]');
-    if (inputs.length > 0) inputs[0].focus();
+      <div style="margin-top:1rem;">
+        <button class="btn btn-danger" onclick="deleteVendor('${vendor.id}', '${vendor.name.replace(/'/g, "\\'")}');showView('list')"><i class="ti ti-trash"></i> Delete vendor</button>
+      </div>
+    `;
   }
 
   function saveNote(vendorId) {
@@ -322,17 +465,12 @@
     input.value = '';
   }
 
-  function showList() {
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.getElementById('view-list').classList.add('active');
-    document.getElementById('page-title').textContent = 'Vendor profiles';
-  }
-
-  function showAddForm() {
-    alert('Add vendor form coming soon! For now, add vendors directly in Supabase table editor.');
-  }
-
-  loadVendors();
+  // Init
+  initAuth().then(result => {
+    if (!result) return;
+    companyId = result.companyId;
+    loadVendors();
+  });
 </script>
 </body>
 </html>
