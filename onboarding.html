@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlowERP — Welcome</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .container { width: 100%; max-width: 480px; padding: 1rem; }
+    .logo { text-align: center; margin-bottom: 2rem; }
+    .logo a { display: inline-flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 700; color: #111; text-decoration: none; }
+    .logo i { color: #378ADD; font-size: 24px; }
+    .card { background: #fff; border: 1px solid #eee; border-radius: 14px; padding: 2rem; box-shadow: 0 2px 16px rgba(0,0,0,0.06); }
+    .step-indicator { display: flex; align-items: center; gap: 8px; margin-bottom: 1.5rem; }
+    .step { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+    .step.active { background: #378ADD; color: #fff; }
+    .step.done { background: #1D9E75; color: #fff; }
+    .step.inactive { background: #f0f0f0; color: #999; }
+    .step-line { flex: 1; height: 2px; background: #f0f0f0; }
+    .step-line.done { background: #1D9E75; }
+    .card h2 { font-size: 20px; font-weight: 700; color: #111; margin-bottom: 6px; }
+    .card p { font-size: 13px; color: #999; margin-bottom: 1.5rem; line-height: 1.6; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { font-size: 12px; font-weight: 500; color: #555; display: block; margin-bottom: 5px; }
+    .form-group input, .form-group select { width: 100%; font-size: 14px; padding: 10px 12px; border-radius: 8px; border: 1px solid #ddd; background: #fff; color: #111; outline: none; transition: border-color 0.15s; }
+    .form-group input:focus, .form-group select:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.1); }
+    .form-group small { font-size: 11px; color: #999; margin-top: 4px; display: block; }
+    .btn-submit { width: 100%; padding: 11px; font-size: 14px; font-weight: 600; border-radius: 8px; border: none; background: #378ADD; color: #fff; cursor: pointer; margin-top: 0.5rem; transition: background 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-submit:hover { background: #185FA5; }
+    .btn-submit:disabled { background: #ccc; cursor: not-allowed; }
+    .error-msg { background: #FCEBEB; border: 1px solid #F09595; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #A32D2D; margin-bottom: 1rem; display: none; }
+    .view { display: none; }
+    .view.active { display: block; }
+    .industry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
+    .industry-btn { padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; color: #333; text-align: left; display: flex; align-items: center; gap: 8px; transition: all 0.15s; }
+    .industry-btn:hover { border-color: #378ADD; background: #f0f7ff; }
+    .industry-btn.selected { border-color: #378ADD; background: #f0f7ff; color: #185FA5; font-weight: 500; }
+    .industry-btn i { font-size: 16px; }
+    .success-screen { text-align: center; padding: 1rem 0; }
+    .success-icon { font-size: 52px; margin-bottom: 1rem; }
+    .checklist { display: flex; flex-direction: column; gap: 8px; margin: 1.25rem 0; text-align: left; }
+    .check-item { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #333; padding: 8px 12px; background: #f9f9f9; border-radius: 8px; }
+    .check-item i { color: #1D9E75; font-size: 16px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="logo">
+    <a href="index.html"><i class="ti ti-settings-2"></i> FlowERP</a>
+  </div>
+
+  <!-- STEP 1 — COMPANY INFO -->
+  <div class="view active" id="view-step1">
+    <div class="card">
+      <div class="step-indicator">
+        <div class="step active">1</div>
+        <div class="step-line"></div>
+        <div class="step inactive">2</div>
+        <div class="step-line"></div>
+        <div class="step inactive">3</div>
+      </div>
+
+      <h2>Welcome to FlowERP! 👋</h2>
+      <p>Let's get your company set up. This takes less than 2 minutes.</p>
+
+      <div class="error-msg" id="step1-error"></div>
+
+      <div class="form-group">
+        <label>Your full name</label>
+        <input type="text" id="s1-name" placeholder="Matthew Ellis" />
+      </div>
+      <div class="form-group">
+        <label>Company name</label>
+        <input type="text" id="s1-company" placeholder="Ridgeline Manufacturing Co." />
+        <small>This is what your team will see when they log in</small>
+      </div>
+      <div class="form-group">
+        <label>Your role</label>
+        <select id="s1-role">
+          <option value="">Select your role...</option>
+          <option value="owner">Owner / Founder</option>
+          <option value="procurement">Procurement Manager</option>
+          <option value="operations">Operations Manager</option>
+          <option value="warehouse">Warehouse Manager</option>
+          <option value="finance">Finance Manager</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <button class="btn-submit" onclick="goToStep2()">Continue <i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>
+
+  <!-- STEP 2 — INDUSTRY -->
+  <div class="view" id="view-step2">
+    <div class="card">
+      <div class="step-indicator">
+        <div class="step done"><i class="ti ti-check" style="font-size:12px;"></i></div>
+        <div class="step-line done"></div>
+        <div class="step active">2</div>
+        <div class="step-line"></div>
+        <div class="step inactive">3</div>
+      </div>
+
+      <h2>What does your company make?</h2>
+      <p>This helps us show you the most relevant features and set up your account correctly.</p>
+
+      <div class="error-msg" id="step2-error"></div>
+
+      <div class="industry-grid">
+        <button class="industry-btn" onclick="selectIndustry(this, 'Metal fabrication')"><i class="ti ti-tools"></i> Metal fabrication</button>
+        <button class="industry-btn" onclick="selectIndustry(this, 'Auto parts')"><i class="ti ti-car"></i> Auto parts</button>
+        <button class="industry-btn" onclick="selectIndustry(this, 'Food & beverage')"><i class="ti ti-chef-hat"></i> Food & beverage</button>
+        <button class="industry-btn" onclick="selectIndustry(this, 'Electronics')"><i class="ti ti-cpu"></i> Electronics</button>
+        <button class="industry-btn" onclick="selectIndustry(this, 'Plastics & rubber')"><i class="ti ti-box"></i> Plastics & rubber</button>
+        <button class="industry-btn" onclick="selectIndustry(this, 'Furniture')"><i class="ti ti-armchair"></i> Furniture</button>
+        <button class="industry-btn" onclick="selectIndustry(this, 'Chemicals')"><i class="ti ti-flask"></i> Chemicals</button>
+        <button class="industry-btn" onclick="selectIndustry(this, 'Other')"><i class="ti ti-dots"></i> Other</button>
+      </div>
+
+      <div class="form-group">
+        <label>How many vendors do you work with?</label>
+        <select id="s2-vendors">
+          <option value="1-10">1–10 vendors</option>
+          <option value="11-25">11–25 vendors</option>
+          <option value="26-50">26–50 vendors</option>
+          <option value="50+">50+ vendors</option>
+        </select>
+      </div>
+
+      <button class="btn-submit" id="step2-btn" onclick="goToStep3()" disabled>Continue <i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>
+
+  <!-- STEP 3 — CREATING ACCOUNT -->
+  <div class="view" id="view-step3">
+    <div class="card">
+      <div class="step-indicator">
+        <div class="step done"><i class="ti ti-check" style="font-size:12px;"></i></div>
+        <div class="step-line done"></div>
+        <div class="step done"><i class="ti ti-check" style="font-size:12px;"></i></div>
+        <div class="step-line done"></div>
+        <div class="step active">3</div>
+      </div>
+
+      <div class="success-screen">
+        <div class="success-icon">🎉</div>
+        <h2>Setting up your account...</h2>
+        <p style="margin-bottom:1rem;">We're creating your company workspace. This takes just a second.</p>
+
+        <div class="checklist" id="setup-checklist">
+          <div class="check-item" id="check-company"><i class="ti ti-loader" style="animation:spin 1s linear infinite;"></i> Creating your company...</div>
+          <div class="check-item" id="check-profile"><i class="ti ti-loader" style="animation:spin 1s linear infinite;color:#999;"></i> <span style="color:#999;">Setting up your profile...</span></div>
+          <div class="check-item" id="check-redirect"><i class="ti ti-loader" style="animation:spin 1s linear infinite;color:#999;"></i> <span style="color:#999;">Preparing your dashboard...</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<script>
+  const { createClient } = supabase;
+  const db = createClient(
+    'https://sxpmubxcmdpptqbknwzh.supabase.co',
+    'sb_publishable_b8pKBMLXtEzEPtUPGsZhlA_1sOdAcTc'
+  );
+
+  let selectedIndustry = '';
+  let userData = {};
+
+  // Check if user is logged in
+  db.auth.getSession().then(async ({ data: { session } }) => {
+    if (!session) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    // Check if user already has a profile
+    const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single();
+    if (profile && profile.company_id) {
+      // Already onboarded — go to dashboard
+      window.location.href = 'dashboard.html';
+    }
+
+    userData.userId = session.user.id;
+    userData.email = session.user.email;
+  });
+
+  function goToStep2() {
+    const name = document.getElementById('s1-name').value.trim();
+    const company = document.getElementById('s1-company').value.trim();
+    const role = document.getElementById('s1-role').value;
+
+    if (!name || !company || !role) {
+      document.getElementById('step1-error').textContent = 'Please fill in all fields.';
+      document.getElementById('step1-error').style.display = 'block';
+      return;
+    }
+
+    userData.name = name;
+    userData.company = company;
+    userData.role = role;
+
+    document.getElementById('step1-error').style.display = 'none';
+    document.getElementById('view-step1').classList.remove('active');
+    document.getElementById('view-step2').classList.add('active');
+  }
+
+  function selectIndustry(btn, industry) {
+    document.querySelectorAll('.industry-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedIndustry = industry;
+    document.getElementById('step2-btn').disabled = false;
+  }
+
+  function goToStep3() {
+    if (!selectedIndustry) return;
+    userData.industry = selectedIndustry;
+    userData.vendorCount = document.getElementById('s2-vendors').value;
+
+    document.getElementById('view-step2').classList.remove('active');
+    document.getElementById('view-step3').classList.add('active');
+
+    createAccount();
+  }
+
+  async function createAccount() {
+    try {
+      // Step 1 — Create company
+      const { data: company, error: companyError } = await db.from('companies').insert({
+        name: userData.company,
+        owner_id: userData.userId,
+        plan: 'starter'
+      }).select().single();
+
+      if (companyError) throw companyError;
+
+      document.getElementById('check-company').innerHTML = '<i class="ti ti-check"></i> Company created!';
+
+      // Step 2 — Create profile
+      await new Promise(r => setTimeout(r, 600));
+
+      const { error: profileError } = await db.from('profiles').insert({
+        id: userData.userId,
+        full_name: userData.name,
+        company_id: company.id,
+        company_name: userData.company
+      });
+
+      if (profileError) throw profileError;
+
+      document.getElementById('check-profile').innerHTML = '<i class="ti ti-check"></i> Profile set up!';
+
+      // Step 3 — Redirect
+      await new Promise(r => setTimeout(r, 600));
+      document.getElementById('check-redirect').innerHTML = '<i class="ti ti-check"></i> Dashboard ready!';
+
+      await new Promise(r => setTimeout(r, 800));
+      window.location.href = 'dashboard.html';
+
+    } catch (error) {
+      console.error('Onboarding error:', error);
+      document.getElementById('view-step3').classList.remove('active');
+      document.getElementById('view-step1').classList.add('active');
+      document.getElementById('step1-error').textContent = 'Something went wrong: ' + error.message;
+      document.getElementById('step1-error').style.display = 'block';
+    }
+  }
+</script>
+</body>
+</html>
