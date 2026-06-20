@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FlowERP — Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="auth.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -18,7 +19,8 @@
     .nav-item:hover { background: #f5f5f5; color: #111; }
     .nav-item.active { background: #f0f7ff; color: #185FA5; font-weight: 500; border-left: 2px solid #378ADD; }
     .nav-item i { font-size: 16px; }
-    .sidebar-footer { margin-top: auto; padding: 1rem 1.1rem; border-top: 1px solid #eee; display: flex; align-items: center; gap: 8px; }
+    .sidebar-footer { margin-top: auto; padding: 1rem 1.1rem; border-top: 1px solid #eee; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .sidebar-footer:hover { background: #f5f5f5; }
     .avatar { width: 30px; height: 30px; border-radius: 50%; background: #378ADD; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; flex-shrink: 0; }
     .user-name { font-size: 12px; font-weight: 500; color: #111; }
     .user-company { font-size: 11px; color: #999; }
@@ -79,26 +81,29 @@
     <a class="nav-item" href="vendors.html"><i class="ti ti-users"></i> Vendors</a>
     <div class="section-label">Account</div>
     <a class="nav-item" href="index.html"><i class="ti ti-settings"></i> Settings</a>
-    <a class="nav-item" href="index.html"><i class="ti ti-logout"></i> Log out</a>
-    <div class="sidebar-footer">
+    <div class="sidebar-footer" onclick="signOut()">
       <div class="avatar">ME</div>
-      <div><div class="user-name">Matthew E.</div><div class="user-company">Ridgeline Mfg. Co.</div></div>
+      <div>
+        <div class="user-name" id="user-name">Loading...</div>
+        <div class="user-company" id="user-company">Loading...</div>
+      </div>
+      <i class="ti ti-logout" style="margin-left:auto;color:#999;font-size:14px;"></i>
     </div>
   </div>
 
   <div class="main">
     <div class="topbar">
-      <span class="topbar-title">Good morning, Matthew 👋</span>
+      <span class="topbar-title" id="greeting">Good morning 👋</span>
       <div class="topbar-right">
         <span style="font-size:12px;color:#999;" id="today-date"></span>
-        <a href="#" class="btn"><i class="ti ti-bell"></i> Alerts</a>
+        <button class="btn" onclick="signOut()"><i class="ti ti-logout"></i> Log out</button>
         <a href="#" class="btn btn-primary"><i class="ti ti-plus"></i> New</a>
       </div>
     </div>
 
     <div class="content">
 
-      <div class="alert">
+      <div class="alert" id="main-alert">
         <div class="alert-left">
           <i class="ti ti-alert-triangle"></i>
           <div>
@@ -115,30 +120,13 @@
       </div>
 
       <div class="metrics">
-        <div class="metric">
-          <div class="metric-label">Total vendors</div>
-          <div class="metric-value" id="metric-vendors">—</div>
-          <div class="metric-sub" id="metric-vendors-sub">Loading...</div>
-        </div>
-        <div class="metric">
-          <div class="metric-label">At-risk parts</div>
-          <div class="metric-value" id="metric-atrisk" style="color:#E24B4A;">—</div>
-          <div class="metric-sub down" id="metric-atrisk-sub">Loading...</div>
-        </div>
-        <div class="metric">
-          <div class="metric-label">Total parts tracked</div>
-          <div class="metric-value" id="metric-parts">—</div>
-          <div class="metric-sub">In database</div>
-        </div>
-        <div class="metric">
-          <div class="metric-label">Avg vendor score</div>
-          <div class="metric-value" id="metric-score">—</div>
-          <div class="metric-sub" id="metric-score-sub">Loading...</div>
-        </div>
+        <div class="metric"><div class="metric-label">Total vendors</div><div class="metric-value" id="metric-vendors">—</div><div class="metric-sub" id="metric-vendors-sub">Loading...</div></div>
+        <div class="metric"><div class="metric-label">At-risk parts</div><div class="metric-value" id="metric-atrisk" style="color:#E24B4A;">—</div><div class="metric-sub down" id="metric-atrisk-sub">Loading...</div></div>
+        <div class="metric"><div class="metric-label">Total parts tracked</div><div class="metric-value" id="metric-parts">—</div><div class="metric-sub">In database</div></div>
+        <div class="metric"><div class="metric-label">Avg vendor score</div><div class="metric-value" id="metric-score">—</div><div class="metric-sub" id="metric-score-sub">Loading...</div></div>
       </div>
 
       <div class="grid2">
-
         <div class="card">
           <div class="card-header">
             <span class="card-title">Vendor scores</span>
@@ -146,9 +134,7 @@
           </div>
           <table>
             <thead><tr><th>Vendor</th><th>Score</th><th>Status</th></tr></thead>
-            <tbody id="vendors-table">
-              <tr><td colspan="3" class="loading">Loading vendors from database...</td></tr>
-            </tbody>
+            <tbody id="vendors-table"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody>
           </table>
         </div>
 
@@ -159,9 +145,7 @@
           </div>
           <table>
             <thead><tr><th>Part</th><th>Stock</th><th>Days left</th></tr></thead>
-            <tbody id="parts-table">
-              <tr><td colspan="3" class="loading">Loading parts from database...</td></tr>
-            </tbody>
+            <tbody id="parts-table"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody>
           </table>
         </div>
 
@@ -182,115 +166,91 @@
         </div>
 
         <div class="card">
-          <div class="card-header">
-            <span class="card-title">Database status</span>
-          </div>
-          <div style="font-size:12px;color:#333;line-height:2;">
+          <div class="card-header"><span class="card-title">Account info</span></div>
+          <div style="font-size:12px;color:#333;line-height:2.2;">
+            <div>👤 <span id="info-name">Loading...</span></div>
+            <div>🏭 <span id="info-company">Loading...</span></div>
+            <div>📦 <span id="info-plan">Loading...</span></div>
             <div>🟢 Supabase connected</div>
-            <div id="db-vendors-count">📦 Vendors: loading...</div>
-            <div id="db-parts-count">🔩 Parts: loading...</div>
-            <div id="db-status">⏳ Fetching live data...</div>
+            <div id="info-vendors">📊 Loading data...</div>
           </div>
         </div>
-
       </div>
     </div>
   </div>
 </div>
 
 <script>
-  // Set today's date
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
-  document.getElementById('today-date').textContent = today;
+  const today = new Date();
+  const hour = today.getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('today-date').textContent = today.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
 
-  // Connect to Supabase
-  const { createClient } = supabase;
-  const db = createClient(
-    'https://sxpmubxcmdpptqbknwzh.supabase.co',
-    'sb_publishable_b8pKBMLXtEzEPtUPGsZhlA_1sOdAcTc'
-  );
+  async function loadDashboard(companyId) {
+    // Load vendors
+    const { data: vendors } = await db.from('vendors').select('*').eq('company_id', companyId).order('score', { ascending: false });
+    const { data: parts } = await db.from('parts').select('*').eq('company_id', companyId);
 
-  // Load vendors from database
-  async function loadVendors() {
-    const { data, error } = await db.from('vendors').select('*').order('score', { ascending: false });
-    if (error) { console.error('Vendors error:', error); return; }
+    if (vendors) {
+      document.getElementById('metric-vendors').textContent = vendors.length;
+      document.getElementById('metric-vendors-sub').textContent = 'Active suppliers';
 
-    // Update metric
-    document.getElementById('metric-vendors').textContent = data.length;
-    document.getElementById('metric-vendors-sub').textContent = 'Active suppliers';
-    document.getElementById('db-vendors-count').textContent = '📦 Vendors: ' + data.length + ' loaded from database';
+      const avgScore = vendors.length > 0 ? Math.round(vendors.reduce((s, v) => s + v.score, 0) / vendors.length) : 0;
+      document.getElementById('metric-score').textContent = avgScore;
+      document.getElementById('metric-score-sub').textContent = 'Average across all vendors';
+      document.getElementById('info-vendors').textContent = `📊 ${vendors.length} vendors · ${parts?.length || 0} parts`;
 
-    // Calculate avg score
-    const avgScore = Math.round(data.reduce((sum, v) => sum + v.score, 0) / data.length);
-    document.getElementById('metric-score').textContent = avgScore;
-    document.getElementById('metric-score-sub').textContent = 'Average across all vendors';
+      document.getElementById('vendors-table').innerHTML = vendors.slice(0, 5).map(v => {
+        const scoreColor = v.score >= 85 ? '#1D9E75' : v.score >= 65 ? '#BA7517' : '#E24B4A';
+        const badgeClass = v.status === 'trusted' ? 'badge-green' : v.status === 'hound' ? 'badge-red' : 'badge-amber';
+        const badgeText = v.status === 'trusted' ? '✓ Trusted' : v.status === 'hound' ? '⚠ Hound' : 'Monitor';
+        return `<tr><td>${v.name}</td><td><strong style="color:${scoreColor}">${v.score}</strong></td><td><span class="badge ${badgeClass}">${badgeText}</span></td></tr>`;
+      }).join('');
 
-    // Count hound list vendors
-    const houndVendors = data.filter(v => v.status === 'hound');
-
-    // Render vendors table
-    const tbody = document.getElementById('vendors-table');
-    tbody.innerHTML = data.slice(0, 5).map(v => {
-      const scoreColor = v.score >= 85 ? '#1D9E75' : v.score >= 65 ? '#BA7517' : '#E24B4A';
-      const badgeClass = v.status === 'trusted' ? 'badge-green' : v.status === 'hound' ? 'badge-red' : 'badge-amber';
-      const badgeText = v.status === 'trusted' ? '✓ Trusted' : v.status === 'hound' ? '⚠ Hound list' : 'Monitor';
-      return `<tr>
-        <td>${v.name}</td>
-        <td><strong style="color:${scoreColor}">${v.score}</strong></td>
-        <td><span class="badge ${badgeClass}">${badgeText}</span></td>
-      </tr>`;
-    }).join('');
-
-    // Update AI summary
-    const criticalVendors = data.filter(v => v.score < 60).map(v => v.name).join(', ');
-    document.getElementById('ai-summary').innerHTML = `<strong>AI summary:</strong> You have ${data.length} vendors with an average score of ${avgScore}. ${criticalVendors ? criticalVendors + ' need immediate attention — scores below 60.' : 'All vendors are performing acceptably.'} Check the runout report for parts needing urgent action.`;
-  }
-
-  // Load parts from database
-  async function loadParts() {
-    const { data, error } = await db.from('parts').select('*').order('qty_on_hand', { ascending: true });
-    if (error) { console.error('Parts error:', error); return; }
-
-    document.getElementById('metric-parts').textContent = data.length;
-    document.getElementById('db-parts-count').textContent = '🔩 Parts: ' + data.length + ' loaded from database';
-
-    // Calculate days until runout and find critical parts
-    const partsWithDays = data.map(p => ({
-      ...p,
-      daysLeft: p.daily_usage > 0 ? Math.floor(p.qty_on_hand / p.daily_usage) : 999
-    })).sort((a, b) => a.daysLeft - b.daysLeft);
-
-    const criticalParts = partsWithDays.filter(p => p.daysLeft <= 7);
-    document.getElementById('metric-atrisk').textContent = criticalParts.length;
-    document.getElementById('metric-atrisk-sub').textContent = criticalParts.length + ' running out within 7 days';
-
-    // Update alert
-    if (criticalParts.length > 0) {
-      document.getElementById('alert-title').textContent = criticalParts.length + ' parts will run out within 7 days — assuming no new receipts';
-      document.getElementById('alert-sub').textContent = criticalParts.map(p => p.name + ' (' + p.daysLeft + ' days)').join(' · ');
-    } else {
-      document.getElementById('alert-title').textContent = 'All parts are well stocked — no immediate action needed';
-      document.getElementById('alert-sub').textContent = '';
+      const criticalVendors = vendors.filter(v => v.score < 60).map(v => v.name).join(', ');
+      document.getElementById('ai-summary').innerHTML = `<strong>AI summary:</strong> You have ${vendors.length} vendors with an average score of ${avgScore}. ${criticalVendors ? criticalVendors + ' need immediate attention.' : 'All vendors performing acceptably.'} Check runout report for urgent parts.`;
     }
 
-    // Render parts table
-    const tbody = document.getElementById('parts-table');
-    tbody.innerHTML = partsWithDays.slice(0, 5).map(p => {
-      const badgeClass = p.daysLeft <= 5 ? 'badge-red' : p.daysLeft <= 14 ? 'badge-amber' : 'badge-green';
-      const daysText = p.daysLeft <= 5 ? p.daysLeft + ' days ⚠' : p.daysLeft <= 14 ? p.daysLeft + ' days' : p.daysLeft + ' days';
-      return `<tr>
-        <td>${p.name}</td>
-        <td>${p.qty_on_hand} units</td>
-        <td><span class="badge ${badgeClass}">${daysText}</span></td>
-      </tr>`;
-    }).join('');
+    if (parts) {
+      const partsWithDays = parts.map(p => ({ ...p, daysLeft: p.daily_usage > 0 ? Math.floor(p.qty_on_hand / p.daily_usage) : 999 })).sort((a, b) => a.daysLeft - b.daysLeft);
+      const critical = partsWithDays.filter(p => p.daysLeft <= 7);
 
-    document.getElementById('db-status').textContent = '✅ All data loaded successfully';
+      document.getElementById('metric-parts').textContent = parts.length;
+      document.getElementById('metric-atrisk').textContent = critical.length;
+      document.getElementById('metric-atrisk-sub').textContent = critical.length + ' running out within 7 days';
+
+      if (critical.length > 0) {
+        document.getElementById('alert-title').textContent = critical.length + ' parts will run out within 7 days';
+        document.getElementById('alert-sub').textContent = critical.map(p => p.name + ' (' + p.daysLeft + ' days)').join(' · ');
+      } else {
+        document.getElementById('alert-title').textContent = 'All parts well stocked — no critical shortages';
+        document.getElementById('alert-sub').textContent = '';
+        document.getElementById('main-alert').style.background = '#EAF3DE';
+        document.getElementById('main-alert').style.borderColor = '#7CB95A';
+        document.getElementById('main-alert').querySelector('i').style.color = '#3B6D11';
+        document.getElementById('alert-title').style.color = '#3B6D11';
+      }
+
+      document.getElementById('parts-table').innerHTML = partsWithDays.slice(0, 5).map(p => {
+        const badgeClass = p.daysLeft <= 5 ? 'badge-red' : p.daysLeft <= 14 ? 'badge-amber' : 'badge-green';
+        return `<tr><td>${p.name}</td><td>${p.qty_on_hand} units</td><td><span class="badge ${badgeClass}">${p.daysLeft === 999 ? '—' : p.daysLeft + ' days'}</span></td></tr>`;
+      }).join('');
+    }
   }
 
-  // Run both
-  loadVendors();
-  loadParts();
+  // Init auth then load dashboard
+  initAuth().then(result => {
+    if (!result) return;
+    const { user, companyId, company } = result;
+
+    // Update greeting
+    document.getElementById('greeting').textContent = greeting + ', ' + (document.getElementById('user-name').textContent || 'there') + ' 👋';
+    document.getElementById('info-name').textContent = document.getElementById('user-name').textContent;
+    document.getElementById('info-company').textContent = document.getElementById('user-company').textContent;
+    document.getElementById('info-plan').textContent = 'Starter plan · Free trial';
+
+    loadDashboard(companyId);
+  });
 </script>
 </body>
 </html>
